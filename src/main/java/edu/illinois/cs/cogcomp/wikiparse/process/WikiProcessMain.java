@@ -2,19 +2,14 @@ package edu.illinois.cs.cogcomp.wikiparse.process;
 
 import edu.illinois.cs.cogcomp.core.datastructures.ViewNames;
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.Constituent;
-import edu.illinois.cs.cogcomp.core.datastructures.textannotation.SpanLabelView;
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.TextAnnotation;
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.View;
-import edu.illinois.cs.cogcomp.wiki.parsing.processors.PageMeta;
 import edu.illinois.cs.cogcomp.wikiparse.parser.WikiDoc;
 import edu.illinois.cs.cogcomp.wikiparse.util.Utilities;
-import info.bliki.wiki.dump.WikiArticle;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by nitishgupta on 9/30/16.
@@ -24,12 +19,14 @@ public class WikiProcessMain {
      * Reads WikiDoc objects (contains one wiki article per object), process them and output in the required format.
      */
 
-    public static String wikiDocsDir = "/save/ngupta19/wikipedia/serialized/";
+    public static String serialized_wikiDocsDir = "/save/ngupta19/wikipedia/serialized/";
     public static String[] wikiDoc_filenames;
 
     public WikiProcessMain() {
+        // Input: Folder containing serialized wikiDocs
+        // Output: Filenames of all serialized docs in the folder
         System.out.println("[#] Initializing Wikipedia Processor ...");
-        File wikiDocsDir_file = new File(wikiDocsDir);
+        File wikiDocsDir_file = new File(serialized_wikiDocsDir);
         File[] files = wikiDocsDir_file.listFiles();
         wikiDoc_filenames = new String[files.length];
         System.out.println("[#] Number of files : " + files.length);
@@ -38,27 +35,28 @@ public class WikiProcessMain {
             if (i % 10000 == 0)
                 System.out.print(i + ", .., ");
         }
-
         System.out.println("\n[#] Num of Wiki Articles : " + wikiDoc_filenames.length);
     }
 
-    public void processAllDocs(String outFilePath) throws Exception {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(outFilePath));
+    public void processAllDocs(String outputDir) throws Exception {
         int docs_done = 0;
         while (docs_done < wikiDoc_filenames.length) {
-            WikiDoc doc = Utilities.deserializeObject(wikiDocsDir + wikiDoc_filenames[docs_done]);
+            String filename = wikiDoc_filenames[docs_done];
+            WikiDoc doc = Utilities.deserializeObject(serialized_wikiDocsDir + filename);
             docs_done++;
+            // Get \t delimited wiki_id, wiki_title, sentences, links
             String write_string = processFile(doc);
             if (write_string.equals("")) {
                 continue;
             }
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputDir + filename));
             writer.write(write_string);
-            writer.write("\n");
+            writer.flush();
+            writer.close();
 
             if (docs_done % 5000 == 0)
                 System.out.print(docs_done + ", ..., ");
         }
-        writer.close();
         System.out.println();
     }
 
@@ -80,7 +78,7 @@ public class WikiProcessMain {
             return "";
         }
 
-        // Getting WIki Title - delimited by space instead of _
+        // Getting Wiki Title - delimited by space instead of _
         String title = doc.getTitle().trim();
         if (title.isEmpty()) {
             return "";
@@ -102,7 +100,6 @@ public class WikiProcessMain {
             return "";
         }
 
-
         // Out Link Wiki Title Delimited by Space
         StringBuffer outLinks = new StringBuffer();
         if (doc.getLinks() != null) {
@@ -118,19 +115,20 @@ public class WikiProcessMain {
         }
 
 		StringBuffer toWrite = new StringBuffer();
-        toWrite.append(id + "\t" +
-                       title + "\t" +
-                       sentences_string + "\t" +
-                       outLinks_string);
+        toWrite.append(id);
+        toWrite.append("\t");
+        toWrite.append(title);
+        toWrite.append("\t");
+        toWrite.append(sentences_string);
+        toWrite.append("\t");
+        toWrite.append(outLinks_string);
 
         return toWrite.toString();
-
-
     }
 
     public static void main(String [] args) throws Exception {
         WikiProcessMain wiki_processor = new WikiProcessMain();
-        wiki_processor.processAllDocs("/save/ngupta19/wikipedia/wiki_id.title.sentences.links.tsv");
+        wiki_processor.processAllDocs("/save/ngupta19/wikipedia/wiki_id.title.sentences.links/");
     }
 
 
