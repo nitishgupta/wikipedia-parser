@@ -1,17 +1,14 @@
-package edu.illinois.cs.cogcomp.parser;
+package edu.illinois.cs.cogcomp.wikiparse.parser;
 
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.TextAnnotation;
+import edu.illinois.cs.cogcomp.wikiparse.util.Utilities;
 import edu.illinois.cs.cogcomp.wiki.parsing.processors.PageMeta;
 import info.bliki.wiki.dump.WikiArticle;
 
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -27,7 +24,7 @@ public class WikiParserMain implements Serializable {
 
     public WikiParserMain(String mid_name_pageID_filepath) throws Exception {
         this.mid_name_pageID_filepath = mid_name_pageID_filepath;
-        serializationDirectory = "/save/ngupta19/wikipedia/serialization/";
+        serializationDirectory = "/save/ngupta19/wikipedia/serialized/";
         this.pageIds = new HashSet<String>();
         this.populatePageIds();
 
@@ -73,7 +70,6 @@ public class WikiParserMain implements Serializable {
         System.setProperty("jdk.xml.totalEntitySizeLimit", "500000000");
         String mid_name_pageID_filepath = "/save/ngupta19/freebase/mid.names.wiki_en_id";
         WikiParserMain wikiparser = new WikiParserMain(mid_name_pageID_filepath);
-        WikiParserMain.serializationDirectory = "/save/ngupta19/wikipedia/serialization/";
 
         WikiParser.parseWiki();
     }

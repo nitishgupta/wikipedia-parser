@@ -1,4 +1,4 @@
-package edu.illinois.cs.cogcomp.parser;
+package edu.illinois.cs.cogcomp.wikiparse.parser;
 
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.TextAnnotation;
 import edu.illinois.cs.cogcomp.wiki.parsing.DumpFilter;

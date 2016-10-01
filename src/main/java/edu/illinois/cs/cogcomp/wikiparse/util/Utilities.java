@@ -1,4 +1,4 @@
-package edu.illinois.cs.cogcomp.parser;
+package edu.illinois.cs.cogcomp.wikiparse.util;
 
 import java.io.*;
 
@@ -14,10 +14,10 @@ public class Utilities {
                 ObjectOutput output = new ObjectOutputStream(buffer);
         ){
             output.writeObject(ob);
-            System.out.println("Serialized Corpus successfully written.");
+            System.out.println("Serialized Object successfully written.");
         }
         catch(IOException ex){
-            System.err.println("Cannot Write Corpus");
+            System.err.println("Cannot Write Serialized Object");
         }
     }
 
@@ -30,7 +30,6 @@ public class Utilities {
             ob = (T) in.readObject();
             in.close();
             fileIn.close();
-            System.out.println("Corpus Read Successfully");
             return ob;
         }catch(IOException i) {
             i.printStackTrace();
