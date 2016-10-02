@@ -8,10 +8,7 @@ import edu.illinois.cs.cogcomp.wikiparse.parser.WikiDoc;
 import edu.illinois.cs.cogcomp.wikiparse.util.Utilities;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by nitishgupta on 9/30/16.
@@ -126,6 +123,10 @@ public class WikiProcessMain {
      */
     public List<String> processFile(WikiDoc doc) {
         int sentences_to_store = 5;
+
+        if(doc.isRedirect()) {
+            return null;
+        }
 
         TextAnnotation ta = doc.getTextAnnotation();
         if (ta == null) {
