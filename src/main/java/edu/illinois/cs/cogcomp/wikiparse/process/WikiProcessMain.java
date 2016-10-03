@@ -158,7 +158,7 @@ public class WikiProcessMain {
         for (Constituent c : sentence) {
             if (sen_written == sentences_to_store)
                 break;
-            sentences.append(c.getSurfaceForm().trim() + " ");
+            sentences.append(c.getSurfaceForm().trim() + " " + "<eos_word>" + " ");
             sen_written++;
         }
         String sentences_string = sentences.toString().replaceAll("\\s+", " ").trim();
