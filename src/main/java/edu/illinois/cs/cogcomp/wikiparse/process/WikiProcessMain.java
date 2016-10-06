@@ -19,7 +19,8 @@ public class WikiProcessMain {
      */
 
     public static String serialized_wikiDocsDir = "/save/ngupta19/wikipedia/serialized/";
-    public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/mid.wiki_id.title.sentences.links/";
+    public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/mid.wiki_id.title.sentence.doc.links/";
+    //public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/mid.wiki_id.title.sentences.links/";
     public static String mid_names_wikiId_file = "/save/ngupta19/freebase/mid.names.wiki_en_id";
     public static String mid_alias_names_file = "/save/ngupta19/freebase/entity.alias.names";
     public static Map<String, List<String>> mid_aliasNames;
@@ -139,6 +140,7 @@ public class WikiProcessMain {
             return null;
         }
 
+        // Getting mid
         String mid;
         if (wikiId_mid.containsKey(wiki_id))
             mid = wikiId_mid.get(wiki_id);
@@ -151,19 +153,22 @@ public class WikiProcessMain {
             return null;
         }
 
-        // Contains multiple tokenized sentences delimited by space.
-        StringBuffer sentences = new StringBuffer();
-        View sentence = ta.getView(ViewNames.SENTENCE);
+        // Making separate local sentences for entity and complete doc
+        // List of sentences contain the first 'sentences_to_store'
+        StringBuffer doc_complete = new StringBuffer();
+        List<String> local_sentences = new ArrayList<String>();
+        View sentences_view = ta.getView(ViewNames.SENTENCE);
         int sen_written = 0;
-        for (Constituent c : sentence) {
-            if (sen_written == sentences_to_store)
-                break;
-            sentences.append(c.getSurfaceForm().trim() + " " + "<eos_word>" + " ");
-            sen_written++;
+        for (Constituent c : sentences_view) {
+            if (sen_written < sentences_to_store) {
+                local_sentences.add(c.getSurfaceForm().replaceAll("\\s+", " ").trim() + " " + "<eos_word>");
+                sen_written++;
+            }
+            doc_complete.append(c.getSurfaceForm().replaceAll("\\s+", " ").trim() + " " + "<eos_word>" + " ");
         }
-        String sentences_string = sentences.toString().replaceAll("\\s+", " ").trim();
+        String doc_string = doc_complete.toString().trim();
 
-        if (sentences_string.isEmpty()) {
+        if (doc_string.isEmpty()) {
             return null;
         }
 
@@ -190,37 +195,43 @@ public class WikiProcessMain {
             names_aliases  = mid_aliasNames.get(mid);
 
         // If aliases found, make multiple copies, else make one with Wikipedia article title
-        if (names_aliases != null) {
-            // If freebase name/aliases do not contain Wikipedia title, add it.
-            if (!names_aliases.contains(title))
-                names_aliases.add(title);
-            for (String name_alias : names_aliases) {
+        for (String sentence : local_sentences) {
+            if (names_aliases != null) {
+                // If freebase name/aliases do not contain Wikipedia title, add it.
+                if (!names_aliases.contains(title))
+                    names_aliases.add(title);
+                for (String name_alias : names_aliases) {
+                    StringBuffer toWrite = new StringBuffer();
+                    toWrite.append(mid);
+                    toWrite.append("\t");
+                    toWrite.append(wiki_id);
+                    toWrite.append("\t");
+                    toWrite.append(name_alias);
+                    toWrite.append("\t");
+                    toWrite.append(sentence);
+                    toWrite.append("\t");
+                    toWrite.append(doc_string);
+                    toWrite.append("\t");
+                    toWrite.append(outLinks_string);
+
+                    toWrite_stringList.add(toWrite.toString());
+                }
+            } else {
                 StringBuffer toWrite = new StringBuffer();
                 toWrite.append(mid);
                 toWrite.append("\t");
                 toWrite.append(wiki_id);
                 toWrite.append("\t");
-                toWrite.append(name_alias);
+                toWrite.append(title);
                 toWrite.append("\t");
-                toWrite.append(sentences_string);
+                toWrite.append(sentence);
+                toWrite.append("\t");
+                toWrite.append(doc_string);
                 toWrite.append("\t");
                 toWrite.append(outLinks_string);
 
                 toWrite_stringList.add(toWrite.toString());
             }
-        } else {
-            StringBuffer toWrite = new StringBuffer();
-            toWrite.append(mid);
-            toWrite.append("\t");
-            toWrite.append(wiki_id);
-            toWrite.append("\t");
-            toWrite.append(title);
-            toWrite.append("\t");
-            toWrite.append(sentences_string);
-            toWrite.append("\t");
-            toWrite.append(outLinks_string);
-
-            toWrite_stringList.add(toWrite.toString());
         }
 
         return toWrite_stringList;

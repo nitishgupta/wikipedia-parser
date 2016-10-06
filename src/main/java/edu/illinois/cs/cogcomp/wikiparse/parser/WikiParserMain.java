@@ -16,14 +16,14 @@ import java.util.Set;
  */
 public class WikiParserMain implements Serializable {
     static Set<String> pageIds;
-    String mid_name_pageID_filepath;
+    static String mid_name_pageID_filepath;
     static String serializationDirectory;
     static Integer numberDocs = 0;
 
 
 
-    public WikiParserMain(String mid_name_pageID_filepath) throws Exception {
-        this.mid_name_pageID_filepath = mid_name_pageID_filepath;
+    public WikiParserMain() throws Exception {
+        this.mid_name_pageID_filepath = "/save/ngupta19/freebase/mid.names.wiki_en_id";
         serializationDirectory = "/save/ngupta19/wikipedia/serialized/";
         this.pageIds = new HashSet<String>();
         this.populatePageIds();
@@ -31,6 +31,7 @@ public class WikiParserMain implements Serializable {
     }
 
     public void populatePageIds() throws Exception {
+        System.out.println("Reading mid.names.wiki_en_id to create set of wiki ids to be parsed ...");
         BufferedReader br = new BufferedReader(new FileReader(this.mid_name_pageID_filepath));
         String line = br.readLine();
         while (line != null) {
@@ -68,9 +69,7 @@ public class WikiParserMain implements Serializable {
 
     public static void main(String [] args) throws Exception {
         System.setProperty("jdk.xml.totalEntitySizeLimit", "500000000");
-        String mid_name_pageID_filepath = "/save/ngupta19/freebase/mid.names.wiki_en_id";
-        WikiParserMain wikiparser = new WikiParserMain(mid_name_pageID_filepath);
-
+        WikiParserMain wikiparser = new WikiParserMain();
         WikiParser.parseWiki();
     }
 }
