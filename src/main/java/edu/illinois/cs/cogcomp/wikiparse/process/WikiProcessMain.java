@@ -19,10 +19,11 @@ public class WikiProcessMain {
      */
 
     public static String serialized_wikiDocsDir = "/save/ngupta19/wikipedia/serialized/";
-    public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/mid.wiki_id.title.sentence.doc.links/";
+    public static String output_plaintext_wikiMentionsDir = "/save/ngupta19/wikipedia/wiki_data/mentions/";
+    public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/wiki_data/docs_links/";
     //public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/mid.wiki_id.title.sentences.links/";
-    public static String mid_names_wikiId_file = "/save/ngupta19/freebase/mid.names.wiki_en_id";
-    public static String mid_alias_names_file = "/save/ngupta19/freebase/entity.alias.names";
+    public static String mid_names_wikiId_file = "/save/ngupta19/freebase/mid.names.wiki_id_en";
+    public static String mid_alias_names_file = "/save/ngupta19/freebase/mid.alias.names";
     public static Map<String, List<String>> mid_aliasNames;
     public static Map<String, String> wikiId_mid;
 
@@ -32,6 +33,7 @@ public class WikiProcessMain {
         // Input: Folder containing serialized wikiDocs
         // Output: Filenames of all serialized docs in the folder
         System.out.println("[#] Initializing Wikipedia Processor ...");
+        System.out.println("[#] Reading serialized docs from " + serialized_wikiDocsDir);
         File wikiDocsDir_file = new File(serialized_wikiDocsDir);
         File[] files = wikiDocsDir_file.listFiles();
         wikiDoc_filenames = new String[files.length];
@@ -88,9 +90,10 @@ public class WikiProcessMain {
         return wikiId_MID;
     }
 
-    public void processAllDocs(String outputDir) throws Exception {
+    public void processAllDocs() throws Exception {
         System.out.println("[#] Processing serialized docs from : " + serialized_wikiDocsDir);
-        System.out.println("[#] Writing processed docs in directory : " + output_plaintext_wikiDocsDir);
+        System.out.println("[#] Writing processed mentions in directory : " + output_plaintext_wikiMentionsDir);
+        System.out.println("[#] Writing processed docs (and links) in directory : " + output_plaintext_wikiDocsDir);
         int docs_done = 0;
         while (docs_done < wikiDoc_filenames.length) {
             String filename = wikiDoc_filenames[docs_done];
@@ -100,16 +103,24 @@ public class WikiProcessMain {
              * Get list of \t delimited wiki_id, name/alias, sentences, links for single article.
              * If freebase name/alias does not contain wikipedia title, it has been added to the list received
              */
-            List<String> toWrite_stringList = processFile(doc);
-            if (toWrite_stringList == null) {
+
+            PlainDoc plaindoc = processFile(doc);
+            if (plaindoc == null) {
                 continue;
             }
-            for (int i=0; i< toWrite_stringList.size(); i++) {
-                String toWrite = toWrite_stringList.get(i);
-                BufferedWriter writer = new BufferedWriter(new FileWriter(outputDir + filename + "_" + i));
-                writer.write(toWrite);
-                writer.flush();
-                writer.close();
+            String doc_links = plaindoc.doc_links;
+            String doc_filename = plaindoc.wikiId;
+            BufferedWriter doc_writer = new BufferedWriter(new FileWriter(output_plaintext_wikiDocsDir + doc_filename));
+            doc_writer.write(doc_links);
+            doc_writer.flush();
+            doc_writer.close();
+            for (int i=0; i< plaindoc.mentions.size(); i++) {
+                String mention = plaindoc.mentions.get(i);
+                String mention_filename = plaindoc.wikiId + "_" + i;
+                BufferedWriter mention_writer = new BufferedWriter(new FileWriter(output_plaintext_wikiMentionsDir + mention_filename));
+                mention_writer.write(mention);
+                mention_writer.flush();
+                mention_writer.close();
             }
 
             if (docs_done % 5000 == 0)
@@ -120,9 +131,10 @@ public class WikiProcessMain {
 
     /*
      * Take a wikipedia doc. Create file with each line for one document.
-     * Line : wiki_id \t wiki_Title \t tokens_in_first_few_sentences_sapce_separated \t words_in_wiki_titles_of_outgoing_links_space_separated
+     * Line : mid \t wiki_id \t wiki_Title \t tokens_in_a_sentence \t tokens_in_doc \t words_in_wiki_titles_of_outgoing_links
      */
-    public List<String> processFile(WikiDoc doc) {
+    public PlainDoc processFile(WikiDoc doc) {
+        int sentence_threshold = 10;
         int sentences_to_store = 5;
 
         if(doc.isRedirect()) {
@@ -158,6 +170,10 @@ public class WikiProcessMain {
         StringBuffer doc_complete = new StringBuffer();
         List<String> local_sentences = new ArrayList<String>();
         View sentences_view = ta.getView(ViewNames.SENTENCE);
+        if (sentences_view.getConstituents().size() < sentence_threshold) {
+            return null;
+        }
+
         int sen_written = 0;
         for (Constituent c : sentences_view) {
             if (sen_written < sentences_to_store) {
@@ -187,8 +203,16 @@ public class WikiProcessMain {
         }
 
 
+        // Making single string for doc and links
+        StringBuffer doc_links = new StringBuffer();
+        doc_links.append(doc_string);
+        doc_links.append("\t");
+        doc_links.append(outLinks_string);
+        String doc_links_string = doc_links.toString();
+
+
         // toWrite_stringList contains multiple copy of the article with different aliases //
-        List<String> toWrite_stringList = new ArrayList<String>();
+        List<String> mentions = new ArrayList<String>();
 
         List<String> names_aliases = null;
         if (mid_aliasNames.containsKey(mid))
@@ -210,11 +234,9 @@ public class WikiProcessMain {
                     toWrite.append("\t");
                     toWrite.append(sentence);
                     toWrite.append("\t");
-                    toWrite.append(doc_string);
-                    toWrite.append("\t");
-                    toWrite.append(outLinks_string);
+                    toWrite.append(wiki_id);
 
-                    toWrite_stringList.add(toWrite.toString());
+                    mentions.add(toWrite.toString());
                 }
             } else {
                 StringBuffer toWrite = new StringBuffer();
@@ -226,20 +248,20 @@ public class WikiProcessMain {
                 toWrite.append("\t");
                 toWrite.append(sentence);
                 toWrite.append("\t");
-                toWrite.append(doc_string);
-                toWrite.append("\t");
-                toWrite.append(outLinks_string);
+                toWrite.append(wiki_id);
 
-                toWrite_stringList.add(toWrite.toString());
+                mentions.add(toWrite.toString());
             }
         }
 
-        return toWrite_stringList;
+
+        PlainDoc plaindoc = new PlainDoc(mid, wiki_id, doc_links_string, mentions);
+        return plaindoc;
     }
 
     public static void main(String [] args) throws Exception {
         WikiProcessMain wiki_processor = new WikiProcessMain();
-        wiki_processor.processAllDocs(wiki_processor.output_plaintext_wikiDocsDir);
+        wiki_processor.processAllDocs();
     }
 
 
