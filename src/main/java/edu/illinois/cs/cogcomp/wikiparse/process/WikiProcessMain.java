@@ -19,13 +19,14 @@ public class WikiProcessMain {
      */
 
     public static String serialized_wikiDocsDir = "/save/ngupta19/wikipedia/serialized/";
-    public static String output_plaintext_wikiMentionsDir = "/save/ngupta19/wikipedia/wiki_data/mentions/";
-    public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/wiki_data/docs_links/";
+    public static String output_plaintext_wikiMentionsDir = "/save/ngupta19/wikipedia/wiki_all_types/mentions/";
+    public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/wiki_all_types/docs_links/";
     //public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/mid.wiki_id.title.sentences.links/";
     public static String mid_names_wikiId_file = "/save/ngupta19/freebase/mid.names.wiki_id_en";
     public static String mid_alias_names_file = "/save/ngupta19/freebase/mid.alias.names";
     public static Map<String, List<String>> mid_aliasNames;
     public static Map<String, String> wikiId_mid;
+    public static int name_length_threshold = 100;
 
     public static String[] wikiDoc_filenames;
 
@@ -61,9 +62,11 @@ public class WikiProcessMain {
             String[] mid_name = line.split("\t");
             String mid = mid_name[0].trim();
             String name = mid_name[1].trim();
-            if (!mid_aliasNames.containsKey(mid))
-                mid_aliasNames.put(mid, new ArrayList<String>());
-            mid_aliasNames.get(mid).add(name);
+            if (name.length() <= name_length_threshold) {
+                if (!mid_aliasNames.containsKey(mid))
+                    mid_aliasNames.put(mid, new ArrayList<String>());
+                mid_aliasNames.get(mid).add(name);
+            }
             line = bwr.readLine();
         }
         System.out.println("Total mids read : " + mid_aliasNames.keySet().size());
