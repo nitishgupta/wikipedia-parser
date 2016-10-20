@@ -18,12 +18,12 @@ public class WikiProcessMain {
      * Reads WikiDoc objects (contains one wiki article per object), process them and output in the required format.
      */
 
-    public static String serialized_wikiDocsDir = "/save/ngupta19/wikipedia/serialized/";
-    public static String output_plaintext_wikiMentionsDir = "/save/ngupta19/wikipedia/wiki_all_types/mentions/";
-    public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/wiki_all_types/docs_links/";
+    public static String serialized_wikiDocsDir = "/save/ngupta19/wikipedia/serialized_full/";
+    public static String output_plaintext_wikiMentionsDir = "/save/ngupta19/wikipedia/wiki_pruned_types/mentions/";
+    public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/wiki_pruned_types/docs_links/";
     //public static String output_plaintext_wikiDocsDir = "/save/ngupta19/wikipedia/mid.wiki_id.title.sentences.links/";
-    public static String mid_names_wikiId_file = "/save/ngupta19/freebase/mid.names.wiki_id_en";
-    public static String mid_alias_names_file = "/save/ngupta19/freebase/mid.alias.names";
+    public static String mid_names_wikiId_file = "/save/ngupta19/freebase/types_pruned/mid.names.wiki_id_en";
+    public static String mid_alias_names_file = "/save/ngupta19/freebase/types_pruned/mid.alias.names";
     public static Map<String, List<String>> mid_aliasNames;
     public static Map<String, String> wikiId_mid;
     public static int name_length_threshold = 100;
@@ -35,16 +35,16 @@ public class WikiProcessMain {
         // Output: Filenames of all serialized docs in the folder
         System.out.println("[#] Initializing Wikipedia Processor ...");
         System.out.println("[#] Reading serialized docs from " + serialized_wikiDocsDir);
-        File wikiDocsDir_file = new File(serialized_wikiDocsDir);
-        File[] files = wikiDocsDir_file.listFiles();
-        wikiDoc_filenames = new String[files.length];
-        System.out.println("[#] Number of files : " + files.length);
-        for (int i = 0; i < files.length; i++) {
-            wikiDoc_filenames[i] = files[i].getName();
-            if (i % 10000 == 0)
-                System.out.print(i + ", .., ");
-        }
-        System.out.println("\n[#] Num of Wiki Articles : " + wikiDoc_filenames.length);
+//        File wikiDocsDir_file = new File(serialized_wikiDocsDir);
+//        File[] files = wikiDocsDir_file.listFiles();
+//        wikiDoc_filenames = new String[files.length];
+//        System.out.println("[#] Number of files : " + files.length);
+//        for (int i = 0; i < files.length; i++) {
+//            wikiDoc_filenames[i] = files[i].getName();
+//            if (i % 10000 == 0)
+//                System.out.print(i + ", .., ");
+//        }
+//        System.out.println("\n[#] Num of Wiki Articles in Wikipedia : " + wikiDoc_filenames.length);
 
         mid_aliasNames = make_MIDNamesMap(mid_alias_names_file);
         wikiId_mid = make_WikiIDMIDMap(mid_names_wikiId_file);
@@ -54,7 +54,7 @@ public class WikiProcessMain {
         /*
          * mid_alias_names_file : contains mid \t name . All aliases and names for mid.
          */
-        System.out.println("[#] Generating mid, list of names/alias map ... ");
+        System.out.println(" [#] Generating mid, list of names/alias map ... ");
         Map<String, List<String>> mid_aliasNames = new HashMap<String, List<String>>();
         BufferedReader bwr = new BufferedReader(new FileReader(mid_alias_names_file));
         String line = bwr.readLine();
@@ -69,7 +69,7 @@ public class WikiProcessMain {
             }
             line = bwr.readLine();
         }
-        System.out.println("Total mids read : " + mid_aliasNames.keySet().size());
+        System.out.println(" [#] Total mids read : " + mid_aliasNames.keySet().size());
         return mid_aliasNames;
     }
 
@@ -77,7 +77,7 @@ public class WikiProcessMain {
         /*
          * mid_names_wikiId_file: contains mid \t name \t wikiId . Name is the freebase type.object.name
          */
-        System.out.println("[#] Generating wiki id -> mid map ... ");
+        System.out.println(" [#] Generating wiki id -> mid map ... ");
         Map<String, String> wikiId_MID = new HashMap<String, String>();
         BufferedReader bwr = new BufferedReader(new FileReader(mid_names_wikiId_file));
         String line = bwr.readLine();
@@ -89,18 +89,21 @@ public class WikiProcessMain {
                 wikiId_MID.put(wikiId, mid);
             line = bwr.readLine();
         }
-        System.out.println("Total WikiIds/MIDs read : " + wikiId_MID.keySet().size());
+        System.out.println(" [#] Total WikiIds/ MIDs read : " + wikiId_MID.keySet().size());
+        System.out.println(" [#] Num of pages written should be less than this.");
         return wikiId_MID;
     }
 
     public void processAllDocs() throws Exception {
-        System.out.println("[#] Processing serialized docs from : " + serialized_wikiDocsDir);
-        System.out.println("[#] Writing processed mentions in directory : " + output_plaintext_wikiMentionsDir);
-        System.out.println("[#] Writing processed docs (and links) in directory : " + output_plaintext_wikiDocsDir);
+        System.out.println(" [#] Processing serialized docs from : " + serialized_wikiDocsDir);
+        System.out.println(" [#] Writing processed mentions in directory : " + output_plaintext_wikiMentionsDir);
+        System.out.println(" [#] Writing processed docs (and links) in directory : " + output_plaintext_wikiDocsDir);
         int docs_done = 0;
-        while (docs_done < wikiDoc_filenames.length) {
-            String filename = wikiDoc_filenames[docs_done];
-            WikiDoc doc = Utilities.deserializeObject(serialized_wikiDocsDir + filename);
+        System.out.println(" [#] WikiIds to process : " + wikiId_mid.keySet().size());
+        for (String wikiId : wikiId_mid.keySet()) {
+            if(!new File(serialized_wikiDocsDir + wikiId).exists())
+                continue;
+            WikiDoc doc = Utilities.deserializeObject(serialized_wikiDocsDir + wikiId);
             docs_done++;
             /*
              * Get list of \t delimited wiki_id, name/alias, sentences, links for single article.
@@ -137,7 +140,7 @@ public class WikiProcessMain {
      * Line : mid \t wiki_id \t wiki_Title \t tokens_in_a_sentence \t tokens_in_doc \t words_in_wiki_titles_of_outgoing_links
      */
     public PlainDoc processFile(WikiDoc doc) {
-        int sentence_threshold = 10;
+        int sentence_threshold = 20;
         int sentences_to_store = 5;
 
         if(doc.isRedirect()) {
@@ -151,7 +154,7 @@ public class WikiProcessMain {
 
         // Getting Wiki ID
         String wiki_id = doc.getID().trim();
-        if (wiki_id.isEmpty()) {
+        if (wiki_id.isEmpty() || !wikiId_mid.containsKey(wiki_id)) {
             return null;
         }
 
@@ -160,11 +163,11 @@ public class WikiProcessMain {
         if (wikiId_mid.containsKey(wiki_id))
             mid = wikiId_mid.get(wiki_id);
         else
-            mid = "<unk_mid>";
+            return null;
 
         // Getting Wiki Title - delimited by space instead of _
         String title = doc.getTitle().trim();
-        if (title.isEmpty()) {
+        if (title.isEmpty() || title.length() > name_length_threshold) {
             return null;
         }
 

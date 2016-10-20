@@ -24,7 +24,7 @@ public class WikiParserMain implements Serializable {
 
     public WikiParserMain() throws Exception {
         this.mid_name_pageID_filepath = "/save/ngupta19/freebase/mid.names.wiki_id_en";
-        serializationDirectory = "/save/ngupta19/wikipedia/serialized/";
+        serializationDirectory = "/save/ngupta19/wikipedia/serialized_full/";
         this.pageIds = new HashSet<String>();
         this.populatePageIds();
 
@@ -47,21 +47,19 @@ public class WikiParserMain implements Serializable {
     public static boolean filter (WikiArticle page, PageMeta meta,
                                TextAnnotation ta) {
         // Other filters of disambiguation, redirect, stub, lists are placed in WikiParser
-        if (pageIds.contains(page.getId())) {
-            System.out.println(page.getTitle());
-            String pageId = page.getId();
-            String serializationPath = serializationDirectory + pageId;
-            WikiDoc doc = new WikiDoc(page, meta, ta);
-            Utilities.serializeObject(doc, serializationPath);
-            numberDocs++;
-            System.out.println("\nNumber of docs stored = " + numberDocs);
-            return false;
-
-        }
-        if (numberDocs == pageIds.size())
-            return true;
-
+        //if (pageIds.contains(page.getId())) {
+        String pageId = page.getId();
+        String serializationPath = serializationDirectory + pageId;
+        WikiDoc doc = new WikiDoc(page, meta, ta);
+        Utilities.serializeObject(doc, serializationPath);
+        numberDocs++;
         return false;
+
+        //}
+        //if (numberDocs == pageIds.size())
+            //return true;
+
+        //return false;
     }
 
 
