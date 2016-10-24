@@ -10,11 +10,7 @@ import java.util.Map;
 /**
  * Created by nitishgupta on 10/20/16.
  */
-public class MsnbcEvaluator {
-    public static String labelDir =
-            "/save/ngupta19/WikificationACL2011Data/MSNBC/Problems/";
-    public static String textDir =
-            "/save/ngupta19/WikificationACL2011Data/MSNBC/RawTextsSimpleChars/";
+public class UIUCEvaluator {
 
     /*
      * Map: Mention char offsets and True Wiki Title (with spaces)

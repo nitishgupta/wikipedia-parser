@@ -1,13 +1,12 @@
 package edu.illinois.cs.cogcomp.wikiparse.datasets;
 
-import edu.illinois.cs.cogcomp.annotation.AnnotatorService;
 import edu.illinois.cs.cogcomp.annotation.TextAnnotationBuilder;
 import edu.illinois.cs.cogcomp.core.datastructures.Pair;
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.Sentence;
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.TextAnnotation;
 import edu.illinois.cs.cogcomp.nlp.tokenizer.IllinoisTokenizer;
 import edu.illinois.cs.cogcomp.nlp.utility.TokenizerTextAnnotationBuilder;
-import edu.illinois.cs.cogcomp.wikiparse.datasets.eval.MsnbcEvaluator;
+import edu.illinois.cs.cogcomp.wikiparse.datasets.eval.UIUCEvaluator;
 import edu.illinois.cs.cogcomp.wikiparse.util.io.FileUtils;
 
 import java.io.BufferedWriter;
@@ -55,7 +54,7 @@ public class WriteDocs {
             System.out.println(doc);
             // Getting offsets for gold mentions
             Map<Pair<Integer, Integer>, String> goldSet =
-                    MsnbcEvaluator.readGoldFromWikifier(labelDir + doc, true);
+                    UIUCEvaluator.readGoldFromWikifier(labelDir + doc, true);
             String text = FileUtils.getTextFromFile(textDir + doc, "Windows-1252");
             StringBuffer links = new StringBuffer();
             for (Pair<Integer, Integer> key : goldSet.keySet()) {
@@ -94,7 +93,7 @@ public class WriteDocs {
             System.out.println(file);
             String doc = file;
             Map<Pair<Integer, Integer>, String> goldSet =
-                    MsnbcEvaluator.readGoldFromWikifier(labelDir + doc, true);
+                    UIUCEvaluator.readGoldFromWikifier(labelDir + doc, true);
             String text = FileUtils.getTextFromFile(textDir + doc, "Windows-1252");
             for (Pair<Integer, Integer> key : goldSet.keySet()) {
                 /*

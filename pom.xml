@@ -44,12 +44,19 @@
 
     <dependencies>
         <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.21</version>
+        </dependency>
+        <dependency>
             <groupId>de.tudarmstadt.ukp.wikipedia</groupId>
             <artifactId>de.tudarmstadt.ukp.wikipedia.api</artifactId>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>de.tudarmstadt.ukp.wikipedia</groupId>
             <artifactId>de.tudarmstadt.ukp.wikipedia.datamachine</artifactId>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>edu.illinois.cs.cogcomp</groupId>
@@ -119,7 +126,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
             </plugin>
         </plugins>
     </reporting>

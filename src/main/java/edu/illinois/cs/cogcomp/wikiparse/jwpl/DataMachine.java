@@ -13,6 +13,7 @@ public class DataMachine {
         System.setProperty("jdk.xml.totalEntitySizeLimit", "500000000");
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
+        // Path where wiki dump is stored.
         String[] arg = {"english", "Contents", "Disambiguation_pages", "/save/ngupta19/enwiki/20160501/"};
         JWPLDataMachine.main(arg);
     }
