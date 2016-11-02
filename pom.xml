@@ -73,6 +73,11 @@
             <artifactId>wikipediaAPI</artifactId>
             <version>2.1.9-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>edu.jhu.agiga</groupId>
+            <artifactId>agiga</artifactId>
+            <version>1.4</version>
+        </dependency>
     </dependencies>
 
     <build>

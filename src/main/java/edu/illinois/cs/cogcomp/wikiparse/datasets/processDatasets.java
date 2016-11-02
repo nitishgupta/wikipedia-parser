@@ -1,12 +1,10 @@
 package edu.illinois.cs.cogcomp.wikiparse.datasets;
 
 import de.tudarmstadt.ukp.wikipedia.api.Page;
-import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
 import edu.illinois.cs.cogcomp.core.datastructures.Pair;
 import edu.illinois.cs.cogcomp.wikiparse.datasets.eval.UIUCEvaluator;
 import edu.illinois.cs.cogcomp.wikiparse.jwpl.WikiDB;
 import edu.illinois.cs.cogcomp.wikiparse.kb.KB;
-import edu.illinois.cs.cogcomp.wikiparse.kb.KBProcessing;
 import edu.illinois.cs.cogcomp.wikiparse.util.io.FileUtils;
 
 import java.io.File;
@@ -21,7 +19,7 @@ public class processDatasets {
 	private static String dataset = "ACE";
 
 	public static final String uiucPath = "/save/ngupta19/WikificationACL2011Data/";
-	public static final String datasetPath = "/save/ngupta19/datasets/";
+	public static final String general_datasetPath = "/save/ngupta19/datasets/";
 
 
 	private static void setDirectories(String dataset) {
@@ -69,8 +67,8 @@ public class processDatasets {
 
 	private static void writeGoldEntities(String dataset) {
 		setDirectories(dataset);
-		String outputPath1 = datasetPath + dataset + "goldEntities_completeDataset.txt";
-		String outputPath2 = datasetPath + dataset + "goldEntities_perDocument.txt";
+		String outputPath1 = general_datasetPath + dataset + "goldEntities_completeDataset.txt";
+		String outputPath2 = general_datasetPath + dataset + "goldEntities_perDocument.txt";
 		StringBuffer goldEntites_string = new StringBuffer();
 		StringBuffer goldEntitesperDoc_string = new StringBuffer();
 		Set<String> goldEntities = new HashSet<>();
@@ -100,6 +98,7 @@ public class processDatasets {
 		setDirectories(dataset);
 		List<String> titlesNotFound = new ArrayList<>();
 		List<String> notFoundInKB = new ArrayList<>();
+		Map<String, String> foundInKB = new HashMap<>();
 		int totalEntities = 0, titleNotFound = 0, notinKB = 0;
 		for (String file : new File(labelDir).list()) {
 			String doc = file;
@@ -108,33 +107,49 @@ public class processDatasets {
 
 			for (Pair<Integer, Integer> key : goldSet.keySet()) {
 				String wiki_Title = goldSet.get(key).replaceAll(" ", "_");
-				Page page = WikiDB.getPage(wiki_Title);
+				Page page;
+				try {
+					page = WikiDB.wiki.getPage(wiki_Title);
+					if (page.isRedirect()) {
+						String new_page = page.getRedirects().iterator().next();
+						page = WikiDB.wiki.getPage(new_page);
+					}
+				} catch (Exception e) {
+					page = null;
+				}
 				if (page == null) {
 					titlesNotFound.add(wiki_Title);
 					titleNotFound++;
 				} else {
 					String wid = Integer.toString(page.getPageId());
-					if (!KB.widMidMap_FoundInWiki.containsKey(wid)) {
+					if (!KB.wids_ParsedInWiki.contains(wid)) {
 						notFoundInKB.add(wiki_Title);
 						notinKB++;
+					} else {
+						foundInKB.put(wid, wiki_Title);
 					}
 				}
 				totalEntities++;
 			}
-
 		}
 		System.out.println("[#] Total Gold Entities (with repetition) found in Dataset : " + totalEntities);
 		System.out.println("[#] Title not found : " + titleNotFound);
 		System.out.println("[#] Not found in KB : " + notinKB);
-		System.out.println("Title not found in WIKI #########################");
+		StringBuffer notfoundinwiki = new StringBuffer();
+		StringBuffer notfoundinkb = new StringBuffer();
+		StringBuffer foundinkb = new StringBuffer();
 		for (String title : titlesNotFound) {
-			System.out.println(title);
+			notfoundinwiki.append(title + "\n");
 		}
-		System.out.println("Not found in our KB #########################");
 		for (String title : notFoundInKB) {
-			System.out.println(title);
+			notfoundinkb.append(title + "\n");
 		}
-
+		for (String wid : foundInKB.keySet()) {
+			foundinkb.append(wid + "\t" + foundInKB.get(wid) + "\n");
+		}
+		FileUtils.writeStringToFile(general_datasetPath + dataset + "/notFoundInWiki.txt", notfoundinwiki.toString());
+		FileUtils.writeStringToFile(general_datasetPath + dataset + "/notFoundInKB.txt", notfoundinkb.toString());
+		FileUtils.writeStringToFile(general_datasetPath + dataset + "/foundInKB.txt", foundinkb.toString());
 
 	}
 
