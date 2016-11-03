@@ -22,6 +22,14 @@ public class Constants {
 	// Filepath to file containing wikipedia mentions
 	public static final String wiki_kb_mentionsFile = "/save/ngupta19/wikipedia/wiki_kb_10_15/mentions.txt";
 
+	// Directory Path to Annotated Giga .xml.gz
+	public static final String agiga_xml_dir = "/save/ngupta19/annotated_gigaword/nyt/";
+
+	// Directory containing AGIGA docs_links text
+	public static final String agiga_docsDir = "/save/ngupta19/annotated_gigaword/docs_links/";
+
+
+
 
 
 }

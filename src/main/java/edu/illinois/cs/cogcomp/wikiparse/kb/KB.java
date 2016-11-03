@@ -25,6 +25,7 @@ public class KB {
 	public static Map<String, String> mid2wid = new HashMap<>();
 	public static Map<String, String> wid2mid = new HashMap<>();
 	public static Map<String, List<String>> mid2aliases = new HashMap<>();
+	// wikiTitle - With underscores
 	public static Map<String, String> wid2WikiTitle = new HashMap<>();
 	public static Map<String, String> wikiTitle2Wid = new HashMap<>();
 
@@ -32,8 +33,6 @@ public class KB {
 	public static Set<String> wids_FoundInWiki = new HashSet<>();
 	// Wiki Ids for legitimate Wiki Pages who's text parse meets conditions. Filter on wikiMidMap_FoundInWiki
 	public static Set<String> wids_ParsedInWiki = new HashSet<>();
-
-
 
 	public static final int name_length_threshold = 75;
 
@@ -293,18 +292,8 @@ public class KB {
 		System.out.println(" [#] wid.WikiTitle size : " + wid2WikiTitle.size());
 	}
 
-	public static String getLnrm(String string) {
-		String lnrm = Normalizer.normalize(string, Normalizer.Form.NFD);
-		lnrm = lnrm.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-		lnrm = lnrm.toLowerCase();
-		lnrm = lnrm.replaceAll("[^\\p{Alnum}]+", "");
-		return lnrm;
-	}
-
 	public static void main(String [] args) {
 		System.out.println(KB.wids_ParsedInWiki.size());
-		String n = getLnrm("Eddie Vedder");
-		System.out.println("Normalized : " + n);
 	}
 
 
