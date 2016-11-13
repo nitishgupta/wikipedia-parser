@@ -48,6 +48,9 @@ public class Constants {
 	// Crosswikis Map serialized
 	public static final String crosswikis_map_ser = "/save/ngupta19/crosswikis/crosswikis.ser";
 
+	// Normalized version of thresholded crosswiki
+	public static final String crosswikis_normalized_map_ser = "/save/ngupta19/crosswikis/crosswikis.normalized.ser";
+
 
 
 
