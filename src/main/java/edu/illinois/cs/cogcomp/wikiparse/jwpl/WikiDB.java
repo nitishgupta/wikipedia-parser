@@ -18,7 +18,8 @@ public class WikiDB {
 	static {
 		dbConfig = new DatabaseConfiguration();
 		dbConfig.setHost("localhost");
-		dbConfig.setDatabase("wiki");
+		// Can also use "wiki" database
+		dbConfig.setDatabase("newwiki");
 		dbConfig.setUser("root");
 		dbConfig.setPassword("dickens");
 		dbConfig.setLanguage(WikiConstants.Language.english);
