@@ -90,24 +90,6 @@ public class WriteDocs {
 		return null;
 	}
 
-	public static void MentionsWriter(String outfile) throws Exception {
-		System.out.println("Writing corpus mentions : " + outfile);
-		StringBuffer corpus_mentions = new StringBuffer();
-		for (String file : new File(labelDir).list()) {
-			String doc = file;
-			System.out.println(doc);
-			// Getting offsets for gold mentions
-			Map<Pair<Integer, Integer>, String> goldSet =
-							UIUCEvaluator.readGoldFromWikifier(labelDir + doc, true);
-			String text = FileUtils.getTextFromFile(textDir + doc, "Windows-1252");
-
-			StringBuffer mentions = getMentions(text, goldSet, doc);
-			corpus_mentions.append(mentions);
-		}
-		FileUtils.writeStringToFile(outfile, corpus_mentions.toString().trim());
-
-	}
-
 	public static StringBuffer getMentions(String text, Map<Pair<Integer, Integer>, String> goldSet, String doc_id) {
 		TextAnnotation ta = tab.createTextAnnotation("", "", text);
 		StringBuffer mentions = new StringBuffer();
@@ -134,6 +116,23 @@ public class WriteDocs {
 			mentions.append("\n");
 		}
 		return mentions;
+	}
+
+	public static void MentionsWriter(String outfile) throws Exception {
+		System.out.println("Writing corpus mentions : " + outfile);
+		StringBuffer corpus_mentions = new StringBuffer();
+		for (String file : new File(labelDir).list()) {
+			String doc = file;
+			System.out.println(doc);
+			// Getting offsets for gold mentions
+			Map<Pair<Integer, Integer>, String> goldSet =
+							UIUCEvaluator.readGoldFromWikifier(labelDir + doc, true);
+			String text = FileUtils.getTextFromFile(textDir + doc, "Windows-1252");
+
+			StringBuffer mentions = getMentions(text, goldSet, doc);
+			corpus_mentions.append(mentions);
+		}
+		FileUtils.writeStringToFile(outfile, corpus_mentions.toString().trim());
 	}
 
 

@@ -3,12 +3,18 @@ package edu.illinois.cs.cogcomp.wikiparse.kb;
 import de.tudarmstadt.ukp.wikipedia.api.Page;
 import de.tudarmstadt.ukp.wikipedia.api.PageIterator;
 import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
+import de.tudarmstadt.ukp.wikipedia.api.exception.WikiPageNotFoundException;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiTitleParsingException;
+import edu.illinois.cs.cogcomp.annotation.TextAnnotationBuilder;
+import edu.illinois.cs.cogcomp.core.datastructures.textannotation.TextAnnotation;
+import edu.illinois.cs.cogcomp.nlp.tokenizer.IllinoisTokenizer;
+import edu.illinois.cs.cogcomp.nlp.utility.TokenizerTextAnnotationBuilder;
 import edu.illinois.cs.cogcomp.wikiparse.jwpl.WikiDB;
 import edu.illinois.cs.cogcomp.wikiparse.util.Constants;
 import edu.illinois.cs.cogcomp.wikiparse.util.io.FileUtils;
 
 import java.io.*;
+import java.text.DecimalFormat;
 import java.text.Normalizer;
 import java.util.*;
 
@@ -16,10 +22,8 @@ import java.util.*;
  * Created by nitishgupta on 10/21/16.
  */
 public class KB {
-	public static Wikipedia wiki = WikiDB.wiki;
 	public static final String mid_alias_names_file = Constants.mid_alias_names_file;
 	public static final String mid_names_wid_filepath = Constants.mid_names_wid_filepath;
-	public static final String wid_foundInWiki_filepath = Constants.wid_foundInWiki_filepath;
 	public static final String wiki_kb_docsDir = Constants.wiki_kb_docsDir;
 	// Complete maps for entities as found in Freebase
 	public static Map<String, String> mid2wid = new HashMap<>();
@@ -28,6 +32,7 @@ public class KB {
 	// wikiTitle - With underscores
 	public static Map<String, String> wid2WikiTitle = new HashMap<>();
 	public static Map<String, String> wikiTitle2Wid = new HashMap<>();
+	public static Map<String, String> redirect2WikiTitle = new HashMap<>();
 
 	// Wiki Ids from Freebase whose pages are legitimate in Wiki.
 	public static Set<String> wids_FoundInWiki = new HashSet<>();
@@ -39,18 +44,22 @@ public class KB {
 	static {
 		System.out.println("[#] Making mid->wid and wid->mid maps ... ");
 		makeMIDWIDMaps();
-		System.out.println("[#] Generating mid, list of names/alias map ... ");
-		makeNameAliasMap();
-		System.out.println("[#] Making wid set for wids in mid.names.wiki_id that are legitimate in Wikipedia");
-		foundInWiki();
-		System.out.println("[#] Making wid set for pages with text in docs_links of : " + wiki_kb_docsDir);
+		//System.out.println("[#] Generating mid, list of names/alias map ... ");
+		//makeNameAliasMap();
+		//System.out.println("[#] Making wid set for wids in mid.names.wiki_id that are legitimate in Wikipedia");
+		//foundInWiki();
+		System.out.println("[#] Making WID set for pages in our KB (i.e. parsed in wiki and in freebase) : " + wiki_kb_docsDir);
 		parsedInWikiPages();
 		System.out.println("[#] Making wid->WikiTitle Map ... " );
 		make_wid2WikiTitle();
+		System.out.println("[#] Making Redirect Title -> Title Map");
+		makeRedirect_WikiTitleMap();
+
+
 	}
 
-	/*
-	 * Make mid -> List<Names/Alias> Map only for mids found in mid.names.wiki_id
+	/**
+	 * mid->wid & wid->mid map
 	 */
 	private static void makeMIDWIDMaps() {
 		int duplicateMIDs = 0, duplicateWIDs = 0;
@@ -95,12 +104,15 @@ public class KB {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		//System.out.println(" [#] Number of mid duplicates : " + duplicateMIDs);
-		//System.out.println(" [#] Number of wid duplicates : " + duplicateWIDs);
+		System.out.println(" [#] Number of mid duplicates : " + duplicateMIDs);
+		System.out.println(" [#] Number of wid duplicates : " + duplicateWIDs);
 		System.out.println(" [#] Number of mids : " + mid2wid.size());
 		System.out.println(" [#] Number of wids : " + wid2mid.size());
 	}
 
+	/*
+	 * Make mid -> List<Names/Alias> Map only for mids found in mid.names.wiki_id
+	 */
 	private static void makeNameAliasMap() {
 		BufferedReader bwr = null;
 		try {
@@ -134,11 +146,16 @@ public class KB {
 		System.out.println(" [#] Total mids read : " + mid2aliases.size());
 	}
 
-	private static void load_widFoundInWiki() {
-		System.out.println("Loading the wid->mid map for entities found in Wikipedia ... ");
+
+	/**
+	 * File loader for parsedInWiki
+	 * Reads file wid.parsedInWiki if exists
+	 */
+	private static void load_widParsedInWiki() {
+		System.out.println(" [#] Loading the wids in our KB ... ");
 		BufferedReader bwr = null;
 		try {
-			bwr = new BufferedReader(new FileReader(wid_foundInWiki_filepath));
+			bwr = new BufferedReader(new FileReader(Constants.wid_parsedInWiki_filepath));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -151,91 +168,50 @@ public class KB {
 		while (line != null) {
 			String wid = line.trim();
 			assert wid2mid.containsKey(wid);
-			wids_FoundInWiki.add(wid);
+			wids_ParsedInWiki.add(wid);
 			try {
 				line = bwr.readLine();
 			} catch (IOException e) {
 				System.out.println("Error in reading line in wid.FoundInWiki");
 			}
 		}
-		System.out.println(" [#] Number of pages found in wiki : " + wids_FoundInWiki.size());
+		System.out.println(" [#] Number of wids in our KB : " + wids_ParsedInWiki.size());
 	}
 
-	private static void foundInWiki() {
-		File f = new File(wid_foundInWiki_filepath);
-		if (f.exists()) {
-			load_widFoundInWiki();
-		} else {
-			BufferedWriter bwr = null;
-			try {
-				bwr = new BufferedWriter(new FileWriter(wid_foundInWiki_filepath));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			int widsprocessed = 0;
-			PageIterator pages = new PageIterator(WikiDB.wiki, true, 100000);
-			while (pages.hasNext()) {
-				widsprocessed++;
-				Page page = null;
-				String wid = null, mid = null;
-				if ((page = pages.next()) != null) {
-					try {
-						if (!page.isRedirect() && !page.isDisambiguation() && !page.isDiscussion() &&
-								!page.getTitle().getPlainTitle().startsWith("List of") &&
-								!page.getTitle().getPlainTitle().startsWith("Lists of")) {
-
-							if (wid2mid.containsKey(Integer.toString(page.getPageId()))) {
-								wid = Integer.toString(page.getPageId());
-								wids_FoundInWiki.add(wid);
-								try {
-									bwr.write(wid);
-									bwr.write("\n");
-								} catch (IOException e) {
-									System.out.println("Error in writing line in wid.FoundInWiki");
-								}
-							}
-						}
-					} catch (WikiTitleParsingException e) {
-
-					}
-				}
-				if (widsprocessed % 50000 == 0)
-					System.out.print(widsprocessed + " ... ");
-			}
-			try {
-				bwr.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-			System.out.println();
-			System.out.println(" [#] Number of pages from Wikipedia processed : " + widsprocessed);
-			System.out.println(" [#] Number of wiki ids in mid.names.wid : " + KB.wid2mid.size());
-			System.out.println(" [#] Number of pages found in wiki : " + wids_FoundInWiki.size());
-		}
-	}
-
+	/**
+	 *
+	 */
 	private static void parsedInWikiPages() {
-		File f = new File(wiki_kb_docsDir);
-		if (!f.exists() == true || !f.isDirectory() == true) {
-			System.out.println("Docs Directory does not exist : " + wiki_kb_docsDir);
-			return;
+		File f = new File(Constants.wid_parsedInWiki_filepath);
+		if (f.exists()) {
+			load_widParsedInWiki();
+		} else {
+			System.out.println(" [#] wid.parsedInWiki : File NOT found. Making ... ");
+			File dir = new File(wiki_kb_docsDir);
+			if (!dir.exists() == true || !dir.isDirectory() == true) {
+				System.out.println("Docs Directory does not exist : " + wiki_kb_docsDir);
+				return;
+			}
+
+			for (String wid : dir.list()) {
+				wids_ParsedInWiki.add(wid);
+			}
+
+			System.out.println(" [#] Number of Wiki Pages parsed and saved in docs links dir : " + wids_ParsedInWiki.size());
+
+			Set<String> notParsed = new HashSet<String>(wid2mid.keySet());
+			notParsed.removeAll(wids_ParsedInWiki);
+
+			StringBuffer notparsed = new StringBuffer();
+			for (String wid : notParsed) {
+				notparsed.append(wid + "\n");
+			}
+
+			wids_ParsedInWiki.retainAll(wid2mid.keySet());
+			System.out.println(" [#] Number of Wiki Pages parsed also in freebase(mid.names.wid): " + wids_ParsedInWiki.size());
+			FileUtils.writeSetToFile(wids_ParsedInWiki, Constants.wid_parsedInWiki_filepath);
+			FileUtils.writeStringToFile("/save/ngupta19/wikipedia/wiki_kb/widsNotParsed", notparsed.toString());
 		}
-
-		for (String wid : new File(wiki_kb_docsDir).list()) {
-			wids_ParsedInWiki.add(wid);
-		}
-
-		System.out.println(" [#] Number of Wiki Pages parsed and saved in docs links dir : " + wids_ParsedInWiki.size());
-
-		Set<String> notParsed = new HashSet<String>(wids_FoundInWiki);
-		notParsed.removeAll(wids_ParsedInWiki);
-
-		StringBuffer notparsed = new StringBuffer();
-		for (String wid : notParsed){
-			notparsed.append(wid + "\n");
-		}
-		FileUtils.writeStringToFile("/save/ngupta19/wikipedia/wiki_kb_10_15/notparsed", notparsed.toString());
 	}
 
 	private static void load_wid2WikiTitle() {
@@ -292,8 +268,247 @@ public class KB {
 		System.out.println(" [#] wid.WikiTitle size : " + wid2WikiTitle.size());
 	}
 
-	public static void main(String [] args) {
-		System.out.println(KB.wids_ParsedInWiki.size());
+	private static void load_redirect2WikiTitle() {
+		int num_redirectTitles = 0;
+		try {
+			BufferedReader bwr = new BufferedReader(new FileReader(Constants.redirectTitle_WikiTitle_filepath));
+			String line = bwr.readLine();
+			while (line != null) {
+				String[] ssplit = line.split("\t");
+				String redirectTitle = ssplit[0].trim();
+				String wikititle = ssplit[1].trim();
+				redirect2WikiTitle.put(redirectTitle, wikititle);
+				num_redirectTitles++;
+				line = bwr.readLine();
+			}
+			bwr.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println(" [#] redirect2WikiTitle Map Loaded! Total Redirect Titles : " + num_redirectTitles);
+	}
+
+
+	/**
+	 * Makes the set of redirectWikiTitle -> Actual Wiki Title
+	 * Also writes a file for the same.
+	 */
+	private static void makeRedirect_WikiTitleMap() {
+		File f = new File(Constants.redirectTitle_WikiTitle_filepath);
+		if (f.exists() && f.isFile()) {
+			System.out.println(" [#] redirect.wikiTitle file found. Loading ... ");
+			load_redirect2WikiTitle();
+		} else {
+			int num_wikipages_w_redirect = 0;
+			int num_pages_processed = 0;
+			int num_redirects_written = 0;
+			Set<String> redirectTitlesWritten = new HashSet<>();
+			Set<String> wikiTitles = wikiTitle2Wid.keySet();
+			Set<String> redirectPageNotFound = new HashSet<>();
+			System.out.println(" [#] Number of wikiTitles to process : " + wikiTitles.size());
+
+			long startTime = System.currentTimeMillis();
+			long rep_startTime = System.currentTimeMillis();
+
+			try {
+				BufferedWriter bwr = new BufferedWriter(new FileWriter(Constants.redirectTitle_WikiTitle_filepath));
+				BufferedWriter bw = new BufferedWriter(new FileWriter("/save/ngupta19/freebase/types_xiao/redirectPageNotInKB.txt"));
+				for (String wikiTitle : wikiTitles) {
+					Page page = WikiDB.wiki.getPage(wikiTitle);
+					Set<String> redirects = page.getRedirects();
+					if (!redirects.isEmpty()) {
+						for (String redirectTitle : redirects) {
+							if (!redirectTitle.trim().equals("")) {
+								if (!redirectTitlesWritten.contains(redirectTitle)) {
+									// This is the title, internet redirects to
+									try {
+										String wikiT = WikiDB.wiki.getPage(redirectTitle).getTitle().getWikiStyleTitle();
+										if (!wikiTitle2Wid.containsKey(wikiT)) {
+											bw.write("Redirect: " + redirectTitle + "\tW: " + wikiT + "\tWT: " + wikiTitle + "\n");
+										} else {
+											bwr.write(redirectTitle);
+											bwr.write("\t");
+											bwr.write(wikiT);
+											bwr.write("\n");
+											num_redirects_written++;
+										}
+									} catch (WikiPageNotFoundException e) {
+										System.out.println("Redirect not found : " + redirectTitle);
+										redirectPageNotFound.add(redirectTitle);
+									}
+								}
+							}
+						}
+						num_wikipages_w_redirect++;
+					}
+					num_pages_processed++;
+					if (num_pages_processed % 10000 == 0) {
+						long estimatedTime = System.currentTimeMillis() - rep_startTime;
+						rep_startTime = System.currentTimeMillis();
+						double tt = ((double) (estimatedTime)) / (1000.0 * 60.0);
+						System.out.print(num_pages_processed + " (" +
+										num_redirects_written + ")" + " (" +
+										new DecimalFormat("#######.####").format(tt) + " mins) .. ");
+					}
+				}
+				bwr.close();
+				bw.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			long estimatedTime = System.currentTimeMillis() - startTime;
+			double tt = ((double) (estimatedTime)) / (1000.0 * 60.0);
+			System.out.println("Total Time : " + tt + "  minutes");
+
+			System.out.println("\n [#] Number of wikiTitles with redirects : " + num_wikipages_w_redirect);
+			System.out.println("\n [#] Number of redirect titles written : " + num_redirects_written);
+		}
+	}
+
+//	/**
+//	 * After making MID->WID from Freebase, Find the WIDs in Wikipedia
+//	 */
+//	private static void foundInWiki() {
+//		File f = new File(wid_foundInWiki_filepath);
+//		if (f.exists()) {
+//			load_widFoundInWiki();
+//		} else {
+//			BufferedWriter bwr = null;
+//			try {
+//				bwr = new BufferedWriter(new FileWriter(wid_foundInWiki_filepath));
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//			int widsprocessed = 0;
+//			PageIterator pages = new PageIterator(WikiDB.wiki, true, 100000);
+//			while (pages.hasNext()) {
+//				widsprocessed++;
+//				Page page = null;
+//				String wid = null, mid = null;
+//				if ((page = pages.next()) != null) {
+//					try {
+//						if (!page.isRedirect() && !page.isDisambiguation() && !page.isDiscussion() &&
+//										!page.getTitle().getPlainTitle().startsWith("List of") &&
+//										!page.getTitle().getPlainTitle().startsWith("Lists of")) {
+//
+//							if (wid2mid.containsKey(Integer.toString(page.getPageId()))) {
+//								wid = Integer.toString(page.getPageId());
+//								wids_FoundInWiki.add(wid);
+//								try {
+//									bwr.write(wid);
+//									bwr.write("\n");
+//								} catch (IOException e) {
+//									System.out.println("Error in writing line in wid.FoundInWiki");
+//								}
+//							}
+//						}
+//					} catch (WikiTitleParsingException e) {
+//
+//					}
+//				}
+//				if (widsprocessed % 50000 == 0)
+//					System.out.print(widsprocessed + " ... ");
+//			}
+//			try {
+//				bwr.close();
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//
+//			System.out.println();
+//			System.out.println(" [#] Number of pages from Wikipedia processed : " + widsprocessed);
+//			System.out.println(" [#] Number of wiki ids in mid.names.wid : " + KB.wid2mid.size());
+//			System.out.println(" [#] Number of pages found in wiki : " + wids_FoundInWiki.size());
+//		}
+//	}
+
+//	private static void makeRedirect_WikiTitleMap() {
+//		File f = new File(Constants.redirectTitle_WikiTitle_filepath);
+//		if (f.exists() && f.isFile()) {
+//			System.out.println(" [#] redirect.wikiTitle file found. Loading ... ");
+//			load_redirect2WikiTitle();
+//		} else {
+//			int num_wikipages_w_redirect = 0;
+//			int num_pages_processed = 0;
+//			int num_redirects_written = 0;
+//			Set<String> redirectTitles = new HashSet<>();
+//			Set<String> wikiTitles = wikiTitle2Wid.keySet();
+//			System.out.println("Number of wikiTitles to process : " + wikiTitles.size());
+//
+//			long startTime = System.currentTimeMillis();
+//			long rep_startTime = System.currentTimeMillis();
+//
+//
+//			try {
+//				BufferedWriter bwr = new BufferedWriter(new FileWriter(Constants.redirectTitle_WikiTitle_filepath));
+//				for (String wikiTitle : wikiTitles) {
+//					Page page = wiki.getPage(wikiTitle);
+//					Set<String> redirects = page.getRedirects();
+//					if (!redirects.isEmpty()) {
+//						for (String redirectTitle : redirects) {
+//							if (!redirectTitle2WikiTitles.containsKey(redirectTitle)) {
+//								//redirectTitle2WikiTitle.put(redirectTitle, wikiTitle);
+//								redirectTitle2WikiTitles.put(redirectTitle, new ArrayList<String>());
+//								redirectTitle2WikiTitles.get(redirectTitle).add(wikiTitle);
+//								StringBuilder s = new StringBuilder();
+//								s.append(redirectTitle);
+//								s.append("\t");
+//								s.append(wikiTitle);
+//								s.append("\n");
+//								bwr.write(s.toString());
+//								num_redirects_written++;
+//								if (redirectTitle.equals(wikiTitle))
+//									System.out.println("R = W : " + wikiTitle);
+//							} else {
+//								redirectTitle2WikiTitles.get(redirectTitle).add(wikiTitle);
+//								System.out.println("Redirect Title Found Again : " + redirectTitle);
+//							}
+//						}
+//						num_wikipages_w_redirect++;
+//					}
+//					num_pages_processed++;
+//					if (num_pages_processed % 5000 == 0) {
+//						long estimatedTime = System.currentTimeMillis() - rep_startTime;
+//						rep_startTime = System.currentTimeMillis();
+//						double tt = ((double) (estimatedTime)) / (1000.0 * 60.0);
+//						System.out.print(num_pages_processed + " (" +
+//										num_redirects_written + ")" + " (" +
+//										new DecimalFormat("#######.####").format(tt) + " mins) .. ");
+//					}
+//				}
+//				bwr.close();
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//
+//			long estimatedTime = System.currentTimeMillis() - startTime;
+//			double tt = ((double) (estimatedTime)) / (1000.0 * 60.0);
+//			System.out.println("Total Time : " + tt + "  minutes");
+//
+//			System.out.println("\n [#] Number of wikiTitles with redirects : " + num_wikipages_w_redirect);
+//			System.out.println("\n [#] Number of redirect titles written : " + num_redirects_written);
+//		}
+//	}
+
+//			Page page = wiki.getPage("John_McLaughlin_(musician)");
+//			System.out.println("Yes : " + page.isRedirect());
+//			System.out.println("title : " + page.getTitle().getWikiStyleTitle());
+//			String wikiTitle = page.getRedirects().iterator().next();
+//			System.out.println(page.getRedirects());
+
+
+	public static void main(String [] args) throws Exception {
+//		Page page = WikiDB.wiki.getPage(1069388);
+//		String text = page.getPlainText();
+//		System.out.println(text);
+//
+//		text = "";
+//		System.out.println("Text : " + text);
+//		TextAnnotationBuilder tab = new TokenizerTextAnnotationBuilder(new IllinoisTokenizer());
+//		TextAnnotation ta = tab.createTextAnnotation("", "", text);
+//		String[] tokens = ta.getTokens();
+//		System.out.println(tokens);
 	}
 
 
