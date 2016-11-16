@@ -8,7 +8,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.io.IOUtils;
@@ -74,15 +73,6 @@ public class FileUtils {
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
-	}
-
-	static public void writeSetToFile(Set<String> set, String filename) {
-		StringBuilder text = new StringBuilder();
-		for (String s : set) {
-			text.append(s);
-			text.append("\n");
-		}
-		writeTextToFile(text.toString(), filename);
 	}
 
 	static public boolean deleteDirectory(File path) {
