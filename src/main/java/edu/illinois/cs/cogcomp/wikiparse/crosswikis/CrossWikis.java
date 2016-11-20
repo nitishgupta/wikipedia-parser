@@ -28,7 +28,7 @@ public class CrossWikis {
 	// Also sorted (LinkedHashMap is value for each mention)
 	public static Map<String, Map<String, Double>> crosswikis_normalized_dict = new HashMap<>();
 
-	public static final double cprob_threshold = 0.001;
+	public static final double cprob_threshold = Constants.cprob_threshold;
 
 	static {
 		normalizedProcessedCrosswikis();
@@ -73,8 +73,9 @@ public class CrossWikis {
 			}
 			long estimatedTime = System.currentTimeMillis() - startTime;
 			double tt = ((double) (estimatedTime)) / (1000.0 * 60.0);
-			System.out.println("[#] Load complete. " + "Total Time : " + tt + "  minutes");
-			System.out.println("[#] Load complete. " + "Total Time : " + tt + "  minutes");
+			System.out.println("[#] Load complete. " + "Total Time : " + tt +
+							           "  minutes. Num_mentions : " + crosswikis_normalized_dict.keySet());
+
 		} else {
 			loadCrossWikisDict();
 			BufferedWriter bwr = null;

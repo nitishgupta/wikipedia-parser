@@ -28,6 +28,7 @@ public class KB {
 	// Complete maps for entities as found in Freebase
 	public static Map<String, String> mid2wid = new HashMap<>();
 	public static Map<String, String> wid2mid = new HashMap<>();
+	public static Map<String, String> wid2FBName = new HashMap<>();
 	public static Map<String, List<String>> mid2aliases = new HashMap<>();
 	// wikiTitle - With underscores
 	public static Map<String, String> wid2WikiTitle = new HashMap<>();
@@ -42,7 +43,7 @@ public class KB {
 	public static final int name_length_threshold = 75;
 
 	static {
-		System.out.println("[#] Making mid->wid and wid->mid maps ... ");
+		System.out.println("[#] Making mid->wid, wid->mid and wid->FreebaseName maps ... ");
 		makeMIDWIDMaps();
 		//System.out.println("[#] Generating mid, list of names/alias map ... ");
 		//makeNameAliasMap();
@@ -52,6 +53,8 @@ public class KB {
 		parsedInWikiPages();
 		System.out.println("[#] Making wid->WikiTitle Map ... " );
 		make_wid2WikiTitle();
+		System.out.println("[#] Writing wid2FreebaseName file ... ");
+		make_wid2FBNameFile();
 		System.out.println("[#] Making Redirect Title -> Title Map");
 		makeRedirect_WikiTitleMap();
 
@@ -93,6 +96,8 @@ public class KB {
 			} else {
 				wid2mid.put(wid, mid);
 			}
+			wid2FBName.put(wid, name);
+
 			try {
 				line = br.readLine();
 			} catch (IOException e) {
@@ -266,6 +271,28 @@ public class KB {
 			}
 		}
 		System.out.println(" [#] wid.WikiTitle size : " + wid2WikiTitle.size());
+	}
+
+	private static void make_wid2FBNameFile() {
+		File f = new File(Constants.wid_FBName_filepath);
+		if (f.exists() && f.isFile()) {
+			System.out.println(" [#] Done.");
+			return;
+		}
+
+		try {
+			BufferedWriter bwr = new BufferedWriter(new FileWriter(Constants.wid_FBName_filepath));
+			for (String wid : wid2WikiTitle.keySet()) {
+				bwr.write(wid);
+				bwr.write("\t");
+				bwr.write(wid2FBName.get(wid));
+				bwr.write("\n");
+			}
+			bwr.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println(" [#] Done.");
 	}
 
 	private static void load_redirect2WikiTitle() {

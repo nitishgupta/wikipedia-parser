@@ -16,6 +16,9 @@ public class Constants {
 	// wid \t WikiTitle for final wids that are parsed in wiki, i.e. in wiki_kb_docsDir
 	public static final String wid_WikiTitle_filepath = "/save/ngupta19/freebase/types_xiao/wid.WikiTitle";
 
+	// wid \t Freebase_Name for final wids that are parsed in wiki, i.e. in wiki_kb_docsDir
+	public static final String wid_FBName_filepath = "/save/ngupta19/freebase/types_xiao/wid.FBName";
+
 	// redirectTitle \t WikiTitle for final wids
 	public static final String redirectTitle_WikiTitle_filepath = "/save/ngupta19/freebase/types_xiao/redirect.wikiTitle";
 
@@ -29,7 +32,7 @@ public class Constants {
 	public static final String wiki_links_vectors_file = "/save/ngupta19/wikipedia/wiki_kb/links.vectors";
 
 	// Filepath to file containing wikipedia mentions
-	public static final String wiki_kb_mentionsdir= "/save/ngupta19/wikipedia/wiki_kb/mentions_tf/";
+	public static final String wiki_kb_mentionsdir= "/save/ngupta19/wikipedia/wiki_kb/mentions_tf_fbname/";
 
 	// Directory Path to Annotated Giga .xml.gz
 	public static final String agiga_xml_dir = "/save/ngupta19/annotated_gigaword/nyt/";
@@ -52,6 +55,8 @@ public class Constants {
 	// Crosswikis Map serialized
 	public static final String crosswikis_map_ser = "/save/ngupta19/crosswikis/crosswikis.ser";
 
+	// Crosswikis cprob threshold
+	public static final Double cprob_threshold = 0.001;
 	// Normalized version of thresholded crosswiki
 	public static final String crosswikis_normalized_map_ser = "/save/ngupta19/crosswikis/crosswikis.normalized.ser";
 

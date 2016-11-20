@@ -35,11 +35,13 @@ public class WikiMentions {
 		String wid;
 		String mid;
 		String wikiTitle;
+		String fb_name;
 		int num_sentences;
 
 		public WIDSentences(String wid) {
 			this.wid = wid;
 			this.wikiTitle = KB.wid2WikiTitle.get(wid);
+			this.fb_name = KB.wid2FBName.get(wid);
 			String doc_text = FileUtils.readFileToString(Constants.wiki_kb_docsDir + wid);
 			String[] sentences = doc_text.split("<eos_word>");
 			this.num_sentences = sentences.length;
@@ -80,12 +82,12 @@ public class WikiMentions {
 		return bwr;
 	}
 
-	public static void writeMentions() {
+	public static void writeMentions(String mentionsOutputDir) {
 		try {
 			long startTime = System.currentTimeMillis();
 			long rep_startTime = System.currentTimeMillis();
 
-			String outDir = Constants.wiki_kb_mentionsdir;
+			String outDir = mentionsOutputDir;
 			String mentions_file_rootname = "mentions.";
 			int file_num = 0;
 			int total_mentions_written = 0;
@@ -109,7 +111,7 @@ public class WikiMentions {
 						mentions_for_wid.append("\t");
 						mentions_for_wid.append(widsentences.wid);
 						mentions_for_wid.append("\t");
-						mentions_for_wid.append(widsentences.wikiTitle);
+						mentions_for_wid.append(widsentences.fb_name);
 						mentions_for_wid.append("\t");
 						mentions_for_wid.append(widsentences.sentences[sent_num]);
 						mentions_for_wid.append("\t");
@@ -160,11 +162,8 @@ public class WikiMentions {
 
 	}
 
-
-
-
 	public static void main(String [] args) {
-		WikiMentions.writeMentions();
+		WikiMentions.writeMentions(Constants.wiki_kb_mentionsdir);
 
 	}
 }
