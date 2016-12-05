@@ -11,12 +11,11 @@ import java.io.*;
  */
 public class WikiMentions {
 
-	public static final int max_mentions_perfile = 100000;
+	public static final int max_mentions_perfile = 1000000;
 	public static final int max_mentions_per_entity = 3;
 
 	public static BufferedReader doc_vectors_reader = null;
 	public static BufferedReader links_vectors_reader = null;
-	public static int numVectorsPerDoc = 1;
 
 	static {
 		initializeDocLinksVectorsReaders();
@@ -107,7 +106,7 @@ public class WikiMentions {
 
 				StringBuilder mentions_for_wid = new StringBuilder();
 				for (int sent_num = 0; sent_num < mentions_to_write; sent_num++) {
-					for (int vec_num = 1; vec_num <= numVectorsPerDoc; vec_num++) {
+					for (int vec_num = 1; vec_num <= 5; vec_num++) {
 						mentions_for_wid.append(widsentences.mid);
 						mentions_for_wid.append("\t");
 						mentions_for_wid.append(widsentences.wid);

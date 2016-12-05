@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * Created by nitishgupta on 11/30/16.
  */
-public class ConllReader {
+public class AidaDocMentionWriter {
 
 	public static final String aida_tsv = Constants.aida_yago_tsv;
 	public static final String datasetMentionsFileDir = "/save/ngupta19/datasets/AIDA/";

@@ -2,12 +2,12 @@ package edu.illinois.cs.cogcomp.wikiparse.datasets;
 
 import de.tudarmstadt.ukp.wikipedia.api.Page;
 import edu.illinois.cs.cogcomp.core.datastructures.Pair;
-import edu.illinois.cs.cogcomp.wikiparse.datasets.aida.AidaGoldAnnotationStats;
 import edu.illinois.cs.cogcomp.wikiparse.datasets.eval.UIUCEvaluator;
 import edu.illinois.cs.cogcomp.wikiparse.jwpl.WikiDB;
 import edu.illinois.cs.cogcomp.wikiparse.kb.KB;
 import edu.illinois.cs.cogcomp.wikiparse.util.Constants;
 import edu.illinois.cs.cogcomp.wikiparse.util.io.FileUtils;
+import org.apache.http.impl.client.AIMDBackoffManager;
 
 import java.io.File;
 import java.util.*;

@@ -28,11 +28,11 @@ public class Constants {
 	public static final String wiki_kb_linksDir = "/save/ngupta19/wikipedia/wiki_kb/links/";
 
 	// Wiki Docs and Links Vector
-	public static final String wiki_doc_vectors_file = "/save/ngupta19/wikipedia/wiki_kb/doc.single.vectors";
-	public static final String wiki_links_vectors_file = "/save/ngupta19/wikipedia/wiki_kb/links.single.vectors";
+	public static final String wiki_doc_vectors_file = "/save/ngupta19/wikipedia/wiki_kb/doc.vectors";
+	public static final String wiki_links_vectors_file = "/save/ngupta19/wikipedia/wiki_kb/links.vectors";
 
 	// Filepath to file containing wikipedia mentions
-	public static final String wiki_kb_mentionsdir= "/save/ngupta19/wikipedia/wiki_kb/mentions_tf_singdoc/";
+	public static final String wiki_kb_mentionsdir= "/save/ngupta19/wikipedia/wiki_kb/mentions_tf_fbname/";
 
 	// Directory Path to Annotated Giga .xml.gz
 	public static final String agiga_xml_dir = "/save/ngupta19/annotated_gigaword/nyt/";
@@ -64,8 +64,6 @@ public class Constants {
 	public static final String crosswikis_normalized_text = "/save/ngupta19/crosswikis/crosswikis.normalized.text";
 
 
-	// AIDA
-	public static final String aida_yago_tsv = "/save/ngupta19/AIDA/aida-yago2-dataset/AIDA-YAGO2-dataset.tsv";
 
 
 	public static final String uiucDataSetRootPath = "/save/ngupta19/WikificationACL2011Data/";

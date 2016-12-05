@@ -1,10 +1,20 @@
 package edu.illinois.cs.cogcomp.wikiparse.util;
 
-import edu.illinois.cs.cogcomp.annotation.TextAnnotationBuilder;
-import edu.illinois.cs.cogcomp.core.datastructures.textannotation.TextAnnotation;
-import edu.illinois.cs.cogcomp.nlp.tokenizer.IllinoisTokenizer;
-import edu.illinois.cs.cogcomp.nlp.tokenizer.Tokenizer;
-import edu.illinois.cs.cogcomp.nlp.utility.TokenizerTextAnnotationBuilder;
+import edu.illinois.cs.cogcomp.wikiparse.util.io.FileUtils;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.process.CoreLabelTokenFactory;
+import edu.stanford.nlp.process.PTBTokenizer;
+import edu.stanford.nlp.process.PTBTokenizer.PTBTokenizerFactory;
+import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.PropertiesUtils;
+import edu.stanford.nlp.util.TypesafeMap;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.*;
 
 /**
  * Created by nitishgupta on 11/7/16.
@@ -42,14 +52,20 @@ public class Test {
 //
 //		}
 
-		Tokenizer tkr = new IllinoisTokenizer();
-		String text = " "; // or "\n" or ""
-		Tokenizer.Tokenization tknzn = tkr.tokenizeTextSpan(text);
-		int[] sentEndOffsets = tknzn.getSentenceEndTokenIndexes();
 
-		TextAnnotationBuilder tab = new TokenizerTextAnnotationBuilder(new IllinoisTokenizer());
-		TextAnnotation ta = tab.createTextAnnotation(text);
+		String doc_text = FileUtils.readFileToString(Constants.wiki_kb_docsDir + "4860");
+		System.out.println(doc_text);
+		System.out.println("****");
 
+		String[] lines = doc_text.split("<eos_word>");
+
+
+		for (String sentence : lines) {
+			System.out.println(sentence.trim() + " <eos_word>");
+		}
+
+		int f = (5 > 3) ? 5 : 3;
+		System.out.println(f);
 
 
 
