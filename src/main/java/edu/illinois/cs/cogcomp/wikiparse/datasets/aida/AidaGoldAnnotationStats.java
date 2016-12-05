@@ -1,4 +1,4 @@
-package edu.illinois.cs.cogcomp.wikiparse.datasets;
+package edu.illinois.cs.cogcomp.wikiparse.datasets.aida;
 
 import de.tudarmstadt.ukp.wikipedia.api.Page;
 import edu.illinois.cs.cogcomp.wikiparse.jwpl.WikiDB;

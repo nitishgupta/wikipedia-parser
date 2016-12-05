@@ -14,7 +14,7 @@ public class ShuffleMentions {
 
 	public static Random rand = new Random();
 
-	public static final int max_lines_per_file = 1000000;
+	public static final int max_lines_per_file = 500000;
 
 	public static int num_of_readers_open;
 
@@ -96,7 +96,7 @@ public class ShuffleMentions {
 
 	public static void main (String [] args) throws Exception {
 		System.out.println("Shuffling ... ");
-		shuffle(Constants.wiki_kb_mentionsdir, "/save/ngupta19/wikipedia/wiki_kb/mentions_tf_fbname_shuf/");
+		shuffle(Constants.wiki_kb_mentionsdir, "/save/ngupta19/wikipedia/wiki_kb/mentions_tf_singdoc_shuf/");
 	}
 
 
