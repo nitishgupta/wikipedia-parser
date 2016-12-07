@@ -19,7 +19,7 @@ public class WikiDB {
 		dbConfig = new DatabaseConfiguration();
 		dbConfig.setHost("localhost");
 		// Can also use "wiki" database
-		dbConfig.setDatabase("newwiki");
+		dbConfig.setDatabase("wiki");
 		dbConfig.setUser("root");
 		dbConfig.setPassword("dickens");
 		dbConfig.setLanguage(WikiConstants.Language.english);

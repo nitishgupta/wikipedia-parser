@@ -1,4 +1,4 @@
-package edu.illinois.cs.cogcomp.wikiparse.datasets;
+package edu.illinois.cs.cogcomp.wikiparse.datasets.uiuc;
 
 import de.tudarmstadt.ukp.wikipedia.api.Page;
 import edu.illinois.cs.cogcomp.annotation.TextAnnotationBuilder;
@@ -21,10 +21,11 @@ import java.util.Map;
 /**
  * Created by nitishgupta on 10/21/16.
  */
-public class WriteDocs {
+public class UIUCDocWriter {
 	private static String labelDir;
 	private static String textDir;
-	private static String outputDir;
+	private static String outputDocsDir;
+	private static String outputLinksDir;
 	private static String dataset = "msnbc";
 
 	public static final String uiucPath = "/save/ngupta19/WikificationACL2011Data/";
@@ -43,17 +44,15 @@ public class WriteDocs {
 			for (Pair<Integer, Integer> key : goldSet.keySet()) {
 				String mention = text.substring(key.getFirst(), key.getSecond());
 				mention = mention.replaceAll("\\s", " ");
-				links.append(mention.trim() + " ");
+				links.append(mention.trim());
+				links.append("\t");
 				System.out.println(mention);
 			}
-			String links_string = links.toString().trim();
-			String text_string = getTokenizedText(text);
+			String doc_text = getTokenizedText(text);
+			String links_text = links.toString().trim();
 
-			BufferedWriter bw = new BufferedWriter(new FileWriter(outputDir + doc));
-			bw.write(text_string);
-			bw.write("\t");
-			bw.write(links_string);
-			bw.close();
+			FileUtils.writeStringToFile(outputDocsDir + doc, doc_text);
+			FileUtils.writeStringToFile(outputLinksDir + doc, links_text);
 		}
 	}
 
@@ -164,15 +163,18 @@ public class WriteDocs {
 			case "msnbc":
 				labelDir = uiucPath + "MSNBC/Problems/";
 				textDir = uiucPath + "MSNBC/RawTextsSimpleChars/";
-				outputDir = datasetPath + "MSNBC/docs_links_gold/";
-				//DocsWriter();
-				MentionsWriter(datasetPath + "MSNBC/mentions.txt");
+				outputDocsDir = datasetPath + "MSNBC/docs/";
+				outputLinksDir = datasetPath + "MSNBC/links/";
+				DocsWriter();
+				//MentionsWriter(datasetPath + "MSNBC/mentions.txt");
 				break;
 			case "ace":
 				labelDir = uiucPath + "ACE2004_Coref_Turking/Dev/ProblemsNoTranscripts/";
 				textDir = uiucPath + "ACE2004_Coref_Turking/Dev/RawTextsNoTranscripts/";
-				outputDir = datasetPath + "ACE/docs_links_gold/";
-				MentionsWriter(datasetPath + "ACE/mentions.txt");
+				outputDocsDir = datasetPath + "ACE/docs/";
+				outputLinksDir = datasetPath + "ACE/links/";
+				DocsWriter();
+				//MentionsWriter(datasetPath + "ACE/mentions.txt");
 				break;
 			default:
 				System.out.println("No Such dataset : " + dataset);
