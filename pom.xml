@@ -46,7 +46,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.21</version>
+            <version>5.1.38</version>
         </dependency>
         <dependency>
             <groupId>de.tudarmstadt.ukp.wikipedia</groupId>
@@ -61,17 +61,17 @@
         <dependency>
             <groupId>edu.illinois.cs.cogcomp</groupId>
             <artifactId>illinois-core-utilities</artifactId>
-            <version>3.0.86</version>
+            <version>3.0.97</version>
         </dependency>
         <dependency>
             <groupId>edu.illinois.cs.cogcomp</groupId>
             <artifactId>illinois-tokenizer</artifactId>
-            <version>3.0.86</version>
+            <version>3.0.97</version>
         </dependency>
         <dependency>
             <groupId>edu.illinois.cs.cogcomp</groupId>
             <artifactId>illinois-corpusreaders</artifactId>
-            <version>3.0.86</version>
+            <version>3.0.97</version>
         </dependency>
         <dependency>
             <groupId>edu.illinois.cs.cogcomp</groupId>
@@ -93,6 +93,11 @@
             <artifactId>stanford-corenlp</artifactId>
             <version>3.6.0</version>
             <classifier>models</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>2.5.0</version>
         </dependency>
     </dependencies>
 
