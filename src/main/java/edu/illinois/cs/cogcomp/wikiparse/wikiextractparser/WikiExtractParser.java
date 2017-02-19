@@ -55,7 +55,7 @@ public class WikiExtractParser {
 
 	public static final int sentenceLengthThreshold = 31;
 	public static final String parsedWikiDirectory = "/save/ngupta19/enwiki/20160920/en/EN_WIKI_PARSED/";
-	public static final String outputWikiMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/mentions_new/";
+	public static final String outputWikiMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/mentions/";
 
 	public WikiExtractParser() {
 		parser = getBoundedThreadPool();

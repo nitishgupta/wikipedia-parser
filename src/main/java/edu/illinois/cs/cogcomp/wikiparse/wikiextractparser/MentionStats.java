@@ -11,15 +11,13 @@ import java.util.*;
  * Created by nitishgupta on 2/11/17.
  */
 public class MentionStats {
-	//public static final String wikiMentionsDir = WikiExtractParser.outputWikiMentionsDir;
-	public static final String wikiMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/complete_mentions";
-	//public static final String wikiMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/val_mentions";
-	public Map<String, Integer> entityCount;
+	public static final String wikiMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/merged_mentions";
+	public Map<String, Integer> entityMentionCount;
 
 	public MentionStats () {
-		entityCount = new HashMap<String, Integer>();
+		entityMentionCount = new HashMap<String, Integer>();
 		for (String en : KB.wikiTitle2Wid.keySet()) {
-			entityCount.put(en, 0);
+			entityMentionCount.put(en, 0);
 		}
 		entityPresenceCountMap();
 	}
@@ -42,7 +40,7 @@ public class MentionStats {
 				String[] split = men.trim().split("\t");
 				assert (split.length == 8): "Mention split does not have 8 items";
 				String wikititle = split[2];
-				entityCount.put(wikititle, entityCount.get(wikititle)+1);
+				entityMentionCount.put(wikititle, entityMentionCount.get(wikititle)+1);
 				String[] typs = split[7].split(" ");
 				types.addAll(Arrays.asList(typs));
 				mensread++;
@@ -59,7 +57,7 @@ public class MentionStats {
 	public void entityStats() {
 		int numOfZeros = 0, numOfOnes = 0, numOfTwos = 0, numOfThrees = 0, numOfFours = 0, numOfFives = 0;
 		int threshold100mentions = 0; // If each entity gets max of 100 mentions, then count of mentions
-		Map<String, Integer> sortedEntityCounts = Utilities.sortByDecreasingValue(entityCount);
+		Map<String, Integer> sortedEntityCounts = Utilities.sortByDecreasingValue(entityMentionCount);
 		Iterator<String> it = sortedEntityCounts.keySet().iterator();
 
 		for (int i=0; i<50; i++) {

@@ -11,13 +11,14 @@ import java.util.*;
  */
 public class TrainTestMentions {
 	public static Random rand = new Random();
-	public static String allMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/complete_mentions/";
-	public static String trainMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/train/";
-	public static String valMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/val/";
+	public static String allMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/merged_mentions/";
+	public static String trainMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/train_val/train/";
+	public static String valMentionsDir = "/save/ngupta19/wikipedia/wiki_mentions/train_val/val/";
 	public MentionStats menstats;
 	public List<String> mentionsFilenames;
 	public List<BufferedReader> readers;
 	public Map<String, Pair<Integer, Integer>> en2traintestmentioncount;
+	public Set<String> singletonentitiesForValidation;
 	public static final int trainMensPerEntity = 10;
 	public static final int valMensPerEntity = 2;
 
@@ -56,15 +57,26 @@ public class TrainTestMentions {
 		// en2traintestmentioncount : Tracks train / test mentions written per entity
 		// First fill train mentions till mensPerEntityThreshold, then fill test mentions
 		en2traintestmentioncount = new HashMap<>();
-		for (String en : menstats.entityCount.keySet()) {
+		List<String> entitiesWithOneMention = new ArrayList<>();
+		for (String en : menstats.entityMentionCount.keySet()) {
 			en2traintestmentioncount.put(en, new Pair<Integer, Integer>(0,0));
+			if (menstats.entityMentionCount.get(en) == 1)
+				entitiesWithOneMention.add(en);
 		}
+		Collections.shuffle(entitiesWithOneMention);
+		int numentitiesForValidation = (int)(entitiesWithOneMention.size()*0.4);
+		System.out.println(" Entities with one mention : " + entitiesWithOneMention.size());
+		System.out.println(" Entities for validation : " + numentitiesForValidation);
+		singletonentitiesForValidation = new HashSet<String>();
+		for (int i=0; i<numentitiesForValidation; i++)
+			singletonentitiesForValidation.add(entitiesWithOneMention.get(i));
 	}
 
 	public void writeTrainTestMentions() throws IOException {
 		System.out.println("Writing Train / Validation Mentions ... ");
 		String trainfname_root = "train.mens.";
-		String valfname_root = "val.mens.";
+		String valfname = "val.mens";
+		String singletonvalmentions = "val.single.mens";
 
 		int trainfnum = 0, valfnum = 0;
 		int trainmensinfile = 0, valmensinfile = 0;
@@ -73,7 +85,8 @@ public class TrainTestMentions {
 		System.out.println("Number of Mention Readers open : " + num_of_readers_open);
 
 		BufferedWriter trwriter = new BufferedWriter(new FileWriter(trainMentionsDir + trainfname_root + trainfnum));
-		BufferedWriter valwriter = new BufferedWriter(new FileWriter(valMentionsDir + valfname_root + valfnum));
+		BufferedWriter valwriter = new BufferedWriter(new FileWriter(valMentionsDir + valfname));
+		BufferedWriter singlevalwriter = new BufferedWriter(new FileWriter(valMentionsDir + singletonvalmentions));
 
 		while (num_of_readers_open > 0) {
 			int reader_num = rand.nextInt(num_of_readers_open);
@@ -87,18 +100,21 @@ public class TrainTestMentions {
 			} else {
 				String en = line.trim().split("\t")[2];
 				Pair<Integer, Integer> trainvalmencounts = en2traintestmentioncount.get(en);
-				if (trainvalmencounts.getFirst() < trainMensPerEntity) {
+				if (trainvalmencounts.getFirst() < trainMensPerEntity && !singletonentitiesForValidation.contains(en)) {
 					trwriter.write(line);
 					trwriter.write("\n");
 					trainmensinfile ++;
 					en2traintestmentioncount.put(en,
 									new Pair<Integer, Integer>(trainvalmencounts.getFirst()+1, trainvalmencounts.getSecond()));
-				} else if (trainvalmencounts.getSecond() < valMensPerEntity) {
+				} else if (trainvalmencounts.getSecond() < valMensPerEntity && !singletonentitiesForValidation.contains(en)) {
 					valwriter.write(line);
 					valwriter.write("\n");
 					valmensinfile ++;
 					en2traintestmentioncount.put(en,
 									new Pair<Integer, Integer>(trainvalmencounts.getFirst(), trainvalmencounts.getSecond()+1));
+				} else if (singletonentitiesForValidation.contains(en)) {
+					singlevalwriter.write(line);
+					singlevalwriter.write("\n");
 				}
 
 				if (trainmensinfile  == numMentionsPerOutputFile) {
@@ -107,17 +123,11 @@ public class TrainTestMentions {
 					trainfnum++;
 					trwriter = new BufferedWriter(new FileWriter(trainMentionsDir + trainfname_root + trainfnum));
 				}
-
-				if (valmensinfile == numMentionsPerOutputFile) {
-					valwriter.close();
-					valmensinfile = 0;
-					valfnum++;
-					valwriter = new BufferedWriter(new FileWriter(valMentionsDir + valfname_root + valfnum));
-				}
 			}
 		}
 		trwriter.close();
 		valwriter.close();
+		singlevalwriter.close();
 	}
 
 
