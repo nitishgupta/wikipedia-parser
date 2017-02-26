@@ -22,15 +22,6 @@ public class Constants {
 	// redirectTitle \t WikiTitle for final wids
 	public static final String redirectTitle_WikiTitle_filepath = "/save/ngupta19/freebase/types_xiao/redirect.wikiTitle";
 
-	// mid \t FB Type for all mids
-	public static final String allMIDs_FBType_filename = "/save/ngupta19/freebase/types_xiao/mid.types.pruned";
-
-	// mid \t FBType1 FBType2 ... FBTypeN for mids that intersect Wikipedia ~ 3.6M
-	public static final String mid_AllFBTypes_filename = "/save/ngupta19/freebase/types_xiao/mid.alltypes";
-	// mid \t FBType1Label FBType2Label ... FBTypeNLabel for mids that intersect Wikipedia ~ 3.6M
-	public static final String mid_AllFBTypeLabels_filename = "/save/ngupta19/freebase/types_xiao/mid.fbtypelabels";
-
-
 	// Directory containing all docs_links text
 	//public static final String wiki_kb_docsDir = "/save/ngupta19/wikipedia/wiki_kb_10_15/docs_links/";
 	public static final String wiki_kb_docsDir = "/save/ngupta19/wikipedia/wiki_kb/docs/";
@@ -79,22 +70,6 @@ public class Constants {
 
 	public static final String uiucDataSetRootPath = "/save/ngupta19/WikificationACL2011Data/";
 	public static final String processDatasetRootPath = "/save/ngupta19/datasets/";
-
-
-	// FIGER TRAINING DATA
-	public static final String figerTrainingDataGz = "/save/ngupta19/freebase/types_xiao/figer.train.data.gz";
-
-	// FIGER GOLD TEST DATA
-	public static final String figerGoldRawData = "/save/ngupta19/wikipedia/figer/figer.gold.raw";
-
-	// FIGER Types Map
-	public static final String figerTypesMap = "/save/ngupta19/freebase/types_xiao/types.map";
-
-	// FIGER TRAINING DATA
-	public static final String figerCompleteProcessedData = "/save/ngupta19/wikipedia/figer/complete.data";
-
-	// FIGER GOLD TEST DATA
-	public static final String figerGoldProcessedData = "/save/ngupta19/wikipedia/figer/figer.gold";
 
 
 }
