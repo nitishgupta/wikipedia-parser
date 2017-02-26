@@ -2,26 +2,21 @@ package edu.illinois.cs.cogcomp.wikiparse.kb;
 
 import de.tudarmstadt.ukp.wikipedia.api.Page;
 import de.tudarmstadt.ukp.wikipedia.api.PageIterator;
-import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
+import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiPageNotFoundException;
-import de.tudarmstadt.ukp.wikipedia.api.exception.WikiTitleParsingException;
-import edu.illinois.cs.cogcomp.annotation.TextAnnotationBuilder;
-import edu.illinois.cs.cogcomp.core.datastructures.textannotation.TextAnnotation;
-import edu.illinois.cs.cogcomp.nlp.tokenizer.IllinoisTokenizer;
-import edu.illinois.cs.cogcomp.nlp.utility.TokenizerTextAnnotationBuilder;
 import edu.illinois.cs.cogcomp.wikiparse.jwpl.WikiDB;
 import edu.illinois.cs.cogcomp.wikiparse.util.Constants;
 import edu.illinois.cs.cogcomp.wikiparse.util.io.FileUtils;
 
 import java.io.*;
 import java.text.DecimalFormat;
-import java.text.Normalizer;
 import java.util.*;
 
 /**
  * Created by nitishgupta on 10/21/16.
  */
 public class KB {
+	public static final String NullWikiTitle = "NULLWIKITITLE";
 	public static final String mid_alias_names_file = Constants.mid_alias_names_file;
 	public static final String mid_names_wid_filepath = Constants.mid_names_wid_filepath;
 	public static final String wiki_kb_docsDir = Constants.wiki_kb_docsDir;
@@ -34,6 +29,12 @@ public class KB {
 	public static Map<String, String> wid2WikiTitle = new HashMap<>();
 	public static Map<String, String> wikiTitle2Wid = new HashMap<>();
 	public static Map<String, String> redirect2WikiTitle = new HashMap<>();
+
+	// MID-> FBTypes (565 types)
+	public static Map<String, Set<String>> mid2types  = new HashMap<>();
+	// MID -> FBTypeLebls that XIAO made (113 labels)
+	public static Map<String, Set<String>> mid2typelabels  = new HashMap<>();
+
 
 	// Wiki Ids from Freebase whose pages are legitimate in Wiki.
 	public static Set<String> wids_FoundInWiki = new HashSet<>();
@@ -57,8 +58,9 @@ public class KB {
 		make_wid2FBNameFile();
 		System.out.println("[#] Making Redirect Title -> Title Map");
 		makeRedirect_WikiTitleMap();
-
-
+		System.out.println("[#] Making MID -> Types Map.");
+		System.out.println("[#] This is all MIDS that are in Wikipedia, not just the ones that were parsed.");
+		make_MID2FBTypesMap();
 	}
 
 	/**
@@ -393,7 +395,171 @@ public class KB {
 		}
 	}
 
+	private static void load_mid2FBTypes() {
+		Set<String> fbtypes = new HashSet<>();
+		Set<String> fbtypelabels = new HashSet<>();
+		try {
+			BufferedReader bwr = new BufferedReader(new FileReader(Constants.mid_AllFBTypes_filename));
+			String line = bwr.readLine();
+			while (line != null) {
+				String[] ssplit = line.split("\t");
+				String mid = ssplit[0].trim();
+				String[] types = ssplit[1].trim().split(" ");
+				Set<String> tts = new HashSet<String>(Arrays.asList(types));
+				fbtypes.addAll(tts);
+				mid2types.put(mid, tts);
+				line = bwr.readLine();
+			}
+			bwr.close();
+
+			bwr = new BufferedReader(new FileReader(Constants.mid_AllFBTypeLabels_filename));
+			line = bwr.readLine();
+			while (line != null) {
+				String[] ssplit = line.split("\t");
+				String mid = ssplit[0].trim();
+				String[] types = ssplit[1].trim().split(" ");
+				Set<String> tts = new HashSet<String>(Arrays.asList(types));
+				fbtypelabels.addAll(tts);
+				mid2typelabels.put(mid, tts);
+				line = bwr.readLine();
+			}
+			bwr.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println("  [#] FB Types : " + fbtypes.size() + "  FBTypeLabels : " + fbtypelabels.size());
+	}
+
+	private static Map<String, String> _FB2Label() {
+		System.out.println(" [#] Making FbType2Label map ... ");
+		Map<String, String> fbtype2label = new HashMap<>();
+		String[] lines = FileUtils.getTextFromFile(Constants.figerTypesMap).trim().split("\n");
+		for (String line : lines) {
+			String [] fbtype_label = line.split("\t");
+			assert (fbtype_label.length == 2);
+
+			String fbtype = fbtype_label[0].replaceAll("/", ".").substring(1);
+			String label = fbtype_label[1].replaceAll("/", ".").substring(1);
+			//System.out.println(fbtype + "\t" + label);
+			fbtype2label.put(fbtype, label);
+		}
+		System.out.println(" [#] Number of Fbtypes in Map : " + fbtype2label.keySet().size());
+		return fbtype2label;
+	}
+
+	private static void make_MID2FBTypesMap() {
+		File f = new File(Constants.mid_AllFBTypes_filename);
+		File f2 = new File(Constants.mid_AllFBTypeLabels_filename);
+		if (f.exists() && f2.exists()) {
+			System.out.println(" [#] mid.alltypes and mid.fbtypelabels file found. Loading ... ");
+			load_mid2FBTypes();
+		}
+
+		else {
+			System.out.println(" [#] mid.alltypes file NOT found. Making ... ");
+			try {
+				BufferedReader br = new BufferedReader(new FileReader(Constants.allMIDs_FBType_filename));
+				Map<String, String> fbtype2label = _FB2Label();
+
+				String line = br.readLine();
+				while (line != null) {
+					String[] midfbtype = line.trim().split("\t");
+					if (mid2wid.containsKey(midfbtype[0])) {
+						if (!mid2types.containsKey(midfbtype[0])) {
+							mid2types.put(midfbtype[0], new HashSet<String>());
+						}
+						mid2types.get(midfbtype[0]).add(midfbtype[1]);
+						if (!mid2typelabels.containsKey(midfbtype[0])) {
+							mid2typelabels.put(midfbtype[0], new HashSet<String>());
+						}
+						mid2typelabels.get(midfbtype[0]).add(fbtype2label.get(midfbtype[1]));
+					}
+					line = br.readLine();
+				}
+				br.close();
+
+				// Write mid2fbtype to file
+				BufferedWriter bwr = new BufferedWriter(new FileWriter(Constants.mid_AllFBTypes_filename));
+				for (Map.Entry<String, Set<String>> entry : mid2types.entrySet()) {
+					StringBuilder lin2wr = new StringBuilder(entry.getKey());
+					lin2wr.append("\t");
+					for (String type : entry.getValue()) {
+						lin2wr.append(type);
+						lin2wr.append(" ");
+					}
+					line = lin2wr.toString().trim();
+					bwr.write(line);
+					bwr.write("\n");
+				}
+				bwr.close();
+
+				// Write mid2fbtypelabels to file
+				bwr = new BufferedWriter(new FileWriter(Constants.mid_AllFBTypeLabels_filename));
+				for (Map.Entry<String, Set<String>> entry : mid2typelabels.entrySet()) {
+					StringBuilder lin2wr = new StringBuilder(entry.getKey());
+					lin2wr.append("\t");
+					for (String type : entry.getValue()) {
+						lin2wr.append(type);
+						lin2wr.append(" ");
+					}
+					line = lin2wr.toString().trim();
+					bwr.write(line);
+					bwr.write("\n");
+				}
+				bwr.close();
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println(" [#] mid.FBTypes size : " + mid2types.size());
+	}
+
+
 //	/**
+
+	public static String KBWikiTitle(String wikititle) {
+		if (KB.wikiTitle2Wid.containsKey(wikititle)) {
+			return wikititle;
+	  } else if (KB.redirect2WikiTitle.containsKey(wikititle)) {
+			return KB.redirect2WikiTitle.get(wikititle);
+		} else {
+			Page page = null;
+			try {
+				page = WikiDB.getPage(wikititle);
+				if (page==null)
+					return NullWikiTitle;
+				String pagetitle = page.getTitle().getWikiStyleTitle();
+				if (KB.wikiTitle2Wid.containsKey(pagetitle)) {
+					return wikititle;
+				} else if (KB.redirect2WikiTitle.containsKey(pagetitle)) {
+					return KB.redirect2WikiTitle.get(pagetitle);
+				} else {
+					return NullWikiTitle;
+				}
+			} catch (WikiApiException e) {
+				return NullWikiTitle;
+			}
+		}
+	}
+
+	public static String wikiTitle2WID(String wikititle) {
+		String wikiTitle = KB.KBWikiTitle(wikititle);
+		if (wikiTitle2Wid.containsKey(wikiTitle))
+			return wikiTitle2Wid.get(wikiTitle);
+		else
+			return "<unk_wid>";
+	}
+
+	public static String wikiTitle2Mid(String wikititle) {
+		String wid = KB.wikiTitle2WID(wikititle);
+		if (wid2mid.containsKey(wid))
+			return wid2mid.get(wid);
+		else
+			return "<unk_mid>";
+	}
+
+
 //	 * After making MID->WID from Freebase, Find the WIDs in Wikipedia
 //	 */
 //	private static void foundInWiki() {
@@ -526,9 +692,7 @@ public class KB {
 
 
 		public static void main(String [] args) throws Exception {
-		Page page = WikiDB.wiki.getPage(9686509);
-		String text = page.getPlainText();
-		System.out.println(text);
+			System.out.println("Hello World!");
 
 //		text = "";
 //		System.out.println("Text : " + text);
