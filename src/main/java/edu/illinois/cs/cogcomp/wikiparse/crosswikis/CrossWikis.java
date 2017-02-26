@@ -28,7 +28,7 @@ public class CrossWikis {
 	// Also sorted (LinkedHashMap is value for each mention)
 	public static Map<String, Map<String, Double>> crosswikis_normalized_dict = new HashMap<>();
 
-	public static final double cprob_threshold = Constants.cprob_threshold;
+	public static final double cprob_threshold = 0.001;
 
 	static {
 		normalizedProcessedCrosswikis();
@@ -188,6 +188,8 @@ public class CrossWikis {
 								crosswikis_dict.put(mention, new HashMap<String, Double>());
 								unique_mentions_written++;
 							}
+							// If wid contained, adds prob. because of redirects.
+							// Add prob of original titles and redirects
 							String wid = KB.wikiTitle2Wid.get(wikiTitle);
 							if (crosswikis_dict.get(mention).containsKey(wid)){
 								double current_prob = crosswikis_dict.get(mention).get(wid);
