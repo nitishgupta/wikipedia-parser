@@ -61,8 +61,4 @@ public class Utilities {
 		return result;
 	}
 
-	public static String decodeURL(String url) throws UnsupportedEncodingException {
-		return java.net.URLDecoder.decode(url, "UTF-8");
-	}
-
 }
