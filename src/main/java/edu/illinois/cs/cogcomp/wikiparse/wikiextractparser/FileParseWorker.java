@@ -33,6 +33,49 @@ public class FileParseWorker implements Runnable {
 		this.outfile = outfile;
 	}
 
+	public class Mention {
+		String mid;
+		String wid;
+		String wikiT;
+		String surface;
+		String sentence;
+		String types;
+		String coherence_mentions;
+		int startTokenidx;
+		int endTokenidx;
+
+		public Mention (String mid, String wid, String wikiT, String surface, String sentence, String types,
+										String coherence_mentions, int start, int end) {
+			this.mid = mid;
+			this.wid = wid;
+			this.wikiT = wikiT;
+			this.surface = surface;
+			this.sentence = sentence;
+			this.types = types;
+			this.coherence_mentions = coherence_mentions;
+			this.startTokenidx = start;
+			this.endTokenidx = end;
+		}
+
+		public void updateCoherence(String coherence_mentions) {
+			this.coherence_mentions = coherence_mentions;
+		}
+
+		public String toString() {
+			StringBuilder MentionText = new StringBuilder();
+			MentionText.append(mid).append("\t");
+			MentionText.append(wid).append("\t");
+			MentionText.append(wikiT).append("\t");
+			MentionText.append(Integer.toString(startTokenidx)).append("\t");
+			MentionText.append(Integer.toString(endTokenidx)).append("\t");
+			MentionText.append(surface).append("\t");
+			MentionText.append(sentence).append("\t");
+			MentionText.append(types).append("\t");
+			MentionText.append(coherence_mentions).append("\n");
+			return MentionText.toString();
+		}
+	}
+
 	public Pair<StringBuilder, Map<Pair<Integer, Integer>, String>> _cleanDocText(String markedupText) {
 		/**
 		 * Takes text marked with <a href="url">surface</a> and returns
@@ -90,12 +133,20 @@ public class FileParseWorker implements Runnable {
 	}
 
 	private String getMentionsInDoc(String markedupDocText, String pageTitle) {
+		/**
+		 * Get a single doc <doc ... >rawText</doc> with markup and returns mentions in the doc.
+		 * Output is a string which has mention delimited by \n
+		 * Mention : mid wid wikiT startToken endToken surface sentence types coherence_mentions
+		 */
+
+		// Get clean text, mention offsets in clean text and their corresponding wiki title.
 		Pair<StringBuilder, Map<Pair<Integer, Integer>, String>> cleanText2Offset = _cleanDocText(markedupDocText);
 		String cleanText = cleanText2Offset.getFirst().toString();
 		Map<Pair<Integer, Integer>, String> offsets2Title = cleanText2Offset.getSecond();
 
 		int start = 0, end = 0;
-		TextAnnotation ta = null;
+
+		TextAnnotation ta = null;  // Tokenize clean text
 		try {
 			ta = tab.createTextAnnotation("", "", cleanText);
 		} catch (Exception e) {
@@ -103,31 +154,31 @@ public class FileParseWorker implements Runnable {
 			return "";
 		}
 
-		StringBuilder MentionSamples = new StringBuilder();
-		for (Map.Entry<Pair<Integer, Integer>, String> entry : offsets2Title.entrySet()) {
+		Set<String> mentionSurfaces = new HashSet<>(); // This is the list for coherence
+		List<Mention> mentions = new ArrayList<>();
+		for (Map.Entry<Pair<Integer, Integer>, String> entry : offsets2Title.entrySet()) { // for each mention
 			try {
 				start = entry.getKey().getFirst();	// Inclusive
 				end = entry.getKey().getSecond() - 1 ;		// Inclusive after -1
 				String title = entry.getValue().replace(" ", "_");
 				String wikiTitle = KB.KBWikiTitle(title);
-				if (KB.wikiTitle2Wid.containsKey(wikiTitle)) {
+				if (KB.wikiTitle2Wid.containsKey(wikiTitle)) {		// Only write mentions of entities in our KB
 					String wid = KB.wikiTitle2Wid.get(wikiTitle);
 					String mid = KB.wid2mid.get(wid);
 					Set<String> types = KB.mid2typelabels.get(mid);
-					int startTokenInDoc = ta.getTokenIdFromCharacterOffset(start);  // Token Location in Doc
-					int endTokenInDoc = ta.getTokenIdFromCharacterOffset(end);      // Token Location in Doc
+					int startTokenInDoc = ta.getTokenIdFromCharacterOffset(start);		// Token Location in Doc
+					int endTokenInDoc = ta.getTokenIdFromCharacterOffset(end);		// Token Location in Doc
 
 					Sentence sent = ta.getSentenceFromToken(startTokenInDoc);
-					int sentStartToken = sent.getStartSpan();                        // Token location for sent start
+					int sentStartToken = sent.getStartSpan();    // Token location for sent start
 
-					int surfaceSentStart = startTokenInDoc - sentStartToken;        // Token loc. in sent
-					int surfaceSentEnd = endTokenInDoc - sentStartToken;            // Token loc. in sent
+					int surfaceSentStart = startTokenInDoc - sentStartToken;    // Token loc. in sent
+					int surfaceSentEnd = endTokenInDoc - sentStartToken;   // Token loc. in sent
 
 					if (surfaceSentEnd >= WikiExtractParser.sentenceLengthThreshold)
 						continue;
 
-					// Making surface
-					String[] tokens = sent.getTokens();
+					String[] tokens = sent.getTokens();		// Making sentence surface
 					String sentenceSurface = "";
 					if (tokens.length > WikiExtractParser.sentenceLengthThreshold) {
 						StringBuilder strbldr = new StringBuilder();
@@ -138,10 +189,11 @@ public class FileParseWorker implements Runnable {
 					} else {
 						sentenceSurface = sent.getTokenizedText();
 					}
-					StringBuilder surfaceBuider = new StringBuilder();
+					StringBuilder surfaceBuider = new StringBuilder();		// Making mention surface
 					for (int i = surfaceSentStart; i <= surfaceSentEnd; i++)
 						surfaceBuider.append(tokens[i]).append(" ");
 					String surface = surfaceBuider.toString().trim();
+					mentionSurfaces.add(surface);		// Adding mention surface to set of surfaces in doc for coherence
 
 					// Making types string
 					StringBuilder typestxt = new StringBuilder();
@@ -149,18 +201,37 @@ public class FileParseWorker implements Runnable {
 						typestxt.append(t).append(" ");
 					}
 
-					MentionSamples.append(mid).append("\t");
-					MentionSamples.append(wid).append("\t");
-					MentionSamples.append(wikiTitle).append("\t");
-					MentionSamples.append(Integer.toString(surfaceSentStart)).append("\t");
-					MentionSamples.append(Integer.toString(surfaceSentEnd)).append("\t");
-					MentionSamples.append(surface).append("\t");
-					MentionSamples.append(sentenceSurface).append("\t");
-					MentionSamples.append(typestxt.toString().trim()).append("\n");
+
+					Mention m = new Mention(mid, wid, wikiTitle, surface, sentenceSurface, typestxt.toString().trim(),
+																	"", surfaceSentStart, surfaceSentEnd); // Mention wihout coherence
+					mentions.add(m);
+//					MentionSamples.append(mid).append("\t");
+//					MentionSamples.append(wid).append("\t");
+//					MentionSamples.append(wikiTitle).append("\t");
+//					MentionSamples.append(Integer.toString(surfaceSentStart)).append("\t");
+//					MentionSamples.append(Integer.toString(surfaceSentEnd)).append("\t");
+//					MentionSamples.append(surface).append("\t");
+//					MentionSamples.append(sentenceSurface).append("\t");
+//					MentionSamples.append(typestxt.toString().trim()).append("\n");
 				}
 			} catch (Exception e) {
 				logger.warning("Mention Writing Failed : " + pageTitle);
 			}
+		}
+
+		StringBuilder coherence_mentions = new StringBuilder();		// Make coherence stringbuilder
+		for (String mentionsurface : mentionSurfaces) {
+			coherence_mentions.append(mentionsurface.trim()).append(" ");
+		}
+		String coherence_string = coherence_mentions.toString().trim();		// Make coherence stringbuilder
+		for (Mention m : mentions) {		// Add coherence mentions to all mentions of this doc
+			m.updateCoherence(coherence_string);
+		}
+
+
+		StringBuilder MentionSamples = new StringBuilder();		// Writing mentions to strings
+		for (Mention m : mentions) {
+			MentionSamples.append(m.toString());
 		}
 		return MentionSamples.toString();
 	}
@@ -205,7 +276,8 @@ public class FileParseWorker implements Runnable {
 
 	public int writeMentionsForFile(String inFilePath, String outFilepath) {
 		/**
-		 * Takes a file with multiple <doc ... >rawText</doc> and writes file with mentions in the documents.
+		 * Takes a file with multiple <doc ... >rawText</doc> and writes file with mentions in the documents
+		 * Mentions are written for Entities belonging to our KB
 		 * Independent function. Can be run in parallel. DO RUN IN PARALLEL
 		 *
 		 * inFilePath : File generated by python parser that contains multiple documents with text and link markups.
