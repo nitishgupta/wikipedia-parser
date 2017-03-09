@@ -8,10 +8,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by nitishgupta on 11/30/16.
@@ -35,8 +32,8 @@ public class AidaDocMentionWriter {
 
 	static {
 		AidaReader();
-		WriteDocs();
-		WriteLinks();
+		//WriteDocs();
+		//WriteLinks();
 		WriteAllMentions();
 		WriteNonNullMentions();
 		System.out.println("Number of docs : " + documents.size());
@@ -56,15 +53,26 @@ public class AidaDocMentionWriter {
 				StringBuilder mentext = new StringBuilder();
 				for (Document.Sentence sent : doc.sentences) {
 					for (Document.Mention mention : sent.mentions) {
-						mentext.append(mention.mid);
-						mentext.append("\t");
-						mentext.append(mention.wid);
-						mentext.append("\t");
-						mentext.append(mention.surface);
-						mentext.append("\t");
-						mentext.append(sent.text);
-						mentext.append("\t");
-						mentext.append(doc.docid.replaceAll(" ", "_"));
+
+						StringBuilder typestxt = new StringBuilder();
+						if (KB.mid2typelabels.containsKey(mention.mid)) {
+							Set<String> types = KB.mid2typelabels.get(mention.mid);
+							for (String t : types) {
+								typestxt.append(t).append(" ");
+							}
+						} else {
+							typestxt.append("<NULL_TYPES>");
+						}
+
+						mentext.append(mention.mid).append("\t");
+						mentext.append(mention.wid).append("\t");
+						mentext.append(mention.widTitle).append("\t");
+						mentext.append(Integer.toString(mention.startToken)).append("\t");
+						mentext.append(Integer.toString(mention.endToken)).append("\t");
+						mentext.append(mention.surface).append("\t");
+						mentext.append(sent.text).append("\t");
+						mentext.append(typestxt.toString().trim());
+						//mentext.append(doc.docid.replaceAll(" ", "_"));
 						mentext.append("\n");
 						docm++;
 					}
@@ -121,15 +129,25 @@ public class AidaDocMentionWriter {
 						if (mention.mid.equals("--NME--"))
 							continue;
 
-						mentext.append(mention.mid);
-						mentext.append("\t");
-						mentext.append(mention.wid);
-						mentext.append("\t");
-						mentext.append(mention.surface);
-						mentext.append("\t");
-						mentext.append(sent.text);
-						mentext.append("\t");
-						mentext.append(doc.docid.replaceAll(" ", "_"));
+						StringBuilder typestxt = new StringBuilder();
+						if (KB.mid2typelabels.containsKey(mention.mid)) {
+							Set<String> types = KB.mid2typelabels.get(mention.mid);
+							for (String t : types) {
+								typestxt.append(t).append(" ");
+							}
+						} else {
+							typestxt.append("<NULL_TYPES>");
+						}
+
+						mentext.append(mention.mid).append("\t");
+						mentext.append(mention.wid).append("\t");
+						mentext.append(mention.widTitle).append("\t");
+						mentext.append(Integer.toString(mention.startToken)).append("\t");
+						mentext.append(Integer.toString(mention.endToken)).append("\t");
+						mentext.append(mention.surface).append("\t");
+						mentext.append(sent.text).append("\t");
+						mentext.append(typestxt.toString().trim());
+						//mentext.append(doc.docid.replaceAll(" ", "_"));
 						mentext.append("\n");
 						docm++;
 					}
@@ -201,6 +219,10 @@ public class AidaDocMentionWriter {
 	}
 
 	public static void AidaReader() {
+		/* Input : AIDA-yago2-dataset.tsv
+		 * DOCSTART starts a new doc, each line as a token and annotation for NER, MID WID etc.
+		 * Empty lines break sentences.
+		 */
 		documents = new ArrayList<>();
 		Document.Sentence s = new Document.Sentence();
 		Document.Doc doc = null;
@@ -212,13 +234,12 @@ public class AidaDocMentionWriter {
 					System.out.println(doc.sentences.size());
 				}
 				int start = line.indexOf("(");
-				String docId = line.substring(start + 1, line.length() - 1);
+				String docId = line.substring(start + 1, line.length() - 1); // ignore last ")"
 				doc = new Document.Doc(docId);
 				s = new Document.Sentence();
 				System.out.println("Doc : " + doc.docid);
 			} else {
 				if (line.trim().length() == 0) {
-					s.tokens.add("<eos_word>");
 					s.listToString();
 					doc.sentences.add(s);
 					s = new Document.Sentence();
@@ -228,18 +249,20 @@ public class AidaDocMentionWriter {
 				if (data.length == 0) {
 					System.out.println("Line length 0 for doc id " + doc.docid);
 				} else if (data.length == 1) {
-					String token = data[0];
+					String token = data[0].trim();
 					s.tokens.add(token);
 				} else if (data.length == 4) {
 					// --NME--
-					String token = data[0];
+					String token = data[0].trim();
 					Boolean mentionStart = "B".equals(data[1]);
 					String mentionsurface = data[2];
 					String wT = data[3];
 					String mid = data[3];
-					String wid = "<unk_wid>";
+					String wid = data[3];
+					// As the currect token hasn't been added, with indexing 0 the length of the sentence is the mention start
+					int startToken = s.tokens.size();
 					if (mentionStart == true) {
-						s.mentions.add(new Document.Mention(mentionsurface, wT, wid, mid));
+						s.mentions.add(new Document.Mention(mentionsurface, wT, wid, mid, startToken));
 					}
 					s.tokens.add(token);
 				} else if (data.length == 6 || data.length == 7) {
@@ -247,33 +270,35 @@ public class AidaDocMentionWriter {
 					// depending on the presence of the Freebase mid.
 					// However the additional IDs are not necessary for internal
 					// use.
-					String token = data[0];
+					String token = data[0].trim();
 					Boolean mentionStart = "B".equals(data[1]);
 					String mentionsurface = data[2];
+					int startToken = s.tokens.size();
 
 					// AIDA WikiTitle
 					String wTitle = urlToTitle(data[4]);
 					// Our KB Title
-					String wT = getWTFromKB(wTitle);
-					String wid;
-					if (wT.equals("NULL_WIKITITLE")) {
-						String aidawid = data[5];
-						if (KB.wid2WikiTitle.containsKey(aidawid)) {
-							wT = KB.wid2WikiTitle.get(aidawid);
-							wid = aidawid;
-						} else
-							wid = "<unk_wid>";
-					} else {
-						wid = KB.wikiTitle2Wid.get(wT);
-					}
-					String mid = "";
-					if (data.length == 6) {
-						mid = "NULL";
-					} else {
-						mid = data[6].replaceAll("/", ".").substring(1);
-					}
+					String wT = KB.KBWikiTitle(wTitle);
+					String wid = KB.wikiTitle2WID(wT);
+					String mid = KB.wikiTitle2Mid(wT);
+//					if (wT.equals("NULL_WIKITITLE")) {
+//						String aidawid = data[5];
+//						if (KB.wid2WikiTitle.containsKey(aidawid)) {
+//							wT = KB.wid2WikiTitle.get(aidawid);
+//							wid = aidawid;
+//						} else
+//							wid = "<unk_wid>";
+//					} else {
+//						wid = KB.wikiTitle2Wid.get(wT);
+//					}
+//					String mid = "";
+//					if (data.length == 6) {
+//						mid = "NULL";
+//					} else {
+//						mid = data[6].replaceAll("/", ".").substring(1);
+//					}
 					if (mentionStart == true) {
-						s.mentions.add(new Document.Mention(mentionsurface, wT, wid, mid));
+						s.mentions.add(new Document.Mention(mentionsurface, wT, wid, mid, startToken));
 					}
 					s.tokens.add(token);
 				} else {
@@ -281,15 +306,6 @@ public class AidaDocMentionWriter {
 				}
 			}
 		}
-	}
-
-	public static String getWTFromKB(String wT) {
-		if (KB.wikiTitle2Wid.containsKey(wT))
-			return wT;
-		else if (KB.redirect2WikiTitle.containsKey(wT))
-			return KB.redirect2WikiTitle.get(wT);
-		else
-			return "NULL_WIKITITLE";
 	}
 
 	public static String urlToTitle(String wikiURL) {

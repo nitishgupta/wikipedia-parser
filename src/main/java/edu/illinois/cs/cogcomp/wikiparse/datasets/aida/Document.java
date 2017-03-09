@@ -10,17 +10,13 @@ import java.util.List;
  */
 public class Document {
 
-	public static class Mention {
-		public String surface;
-		public String widTitle;
-		public String mid;
-		public String wid;
+	public static class Doc {
+		String docid;
+		List<Sentence> sentences;
 
-		public Mention(String surface, String wT, String wid, String mid) {
-			this.surface = surface;
-			this.widTitle = wT;
-			this.mid = mid;
-			this.wid = wid;
+		public Doc(String docid) {
+			this.docid = docid;
+			this.sentences = new ArrayList<>();
 		}
 	}
 
@@ -37,21 +33,30 @@ public class Document {
 		public void listToString() {
 			StringBuilder t = new StringBuilder();
 			for (String token : tokens) {
-				t.append(token);
-				t.append(" ");
+				t.append(token).append(" ");
 			}
 			this.text = t.toString().trim();
 		}
 	}
 
-	public static class Doc {
-		String docid;
-		List<Sentence> sentences;
+	public static class Mention {
+		public String surface;
+		public String widTitle;
+		public String mid;
+		public String wid;
+		public int startToken;
+		public int endToken;
 
-		public Doc(String docid) {
-			this.docid = docid;
-			this.sentences = new ArrayList<>();
+		public Mention(String surface, String wT, String wid, String mid, int startToken) {
+			this.surface = surface;
+			this.widTitle = wT;
+			this.mid = mid;
+			this.wid = wid;
+			this.startToken = startToken;
+			int numTokensInSurface = this.surface.split(" ").length;
+			this.endToken = startToken + numTokensInSurface - 1;
 		}
 	}
+
 
 }
