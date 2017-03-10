@@ -154,7 +154,7 @@ public class FileParseWorker implements Runnable {
 			return "";
 		}
 
-		Set<String> mentionSurfaces = new HashSet<>(); // This is the list for coherence
+		Set<String> mentionSurfaces = new HashSet<>(); // This is the list for coherence. Surfaces are joined by _
 		List<Mention> mentions = new ArrayList<>();
 		for (Map.Entry<Pair<Integer, Integer>, String> entry : offsets2Title.entrySet()) { // for each mention
 			try {
@@ -193,7 +193,7 @@ public class FileParseWorker implements Runnable {
 					for (int i = surfaceSentStart; i <= surfaceSentEnd; i++)
 						surfaceBuider.append(tokens[i]).append(" ");
 					String surface = surfaceBuider.toString().trim();
-					mentionSurfaces.add(surface);		// Adding mention surface to set of surfaces in doc for coherence
+					mentionSurfaces.add(surface.replaceAll(" ", "_"));		// Adding mention surface to set of surfaces in doc for coherence
 
 					// Making types string
 					StringBuilder typestxt = new StringBuilder();
@@ -223,11 +223,10 @@ public class FileParseWorker implements Runnable {
 		for (String mentionsurface : mentionSurfaces) {
 			coherence_mentions.append(mentionsurface.trim()).append(" ");
 		}
-		String coherence_string = coherence_mentions.toString().trim();		// Make coherence stringbuilder
+		String coherence_string = coherence_mentions.toString().trim();		// Make coherence mentions string
 		for (Mention m : mentions) {		// Add coherence mentions to all mentions of this doc
 			m.updateCoherence(coherence_string);
 		}
-
 
 		StringBuilder MentionSamples = new StringBuilder();		// Writing mentions to strings
 		for (Mention m : mentions) {
