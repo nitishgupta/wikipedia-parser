@@ -1,0 +1,69 @@
+Entities with >= 2 mentions: 1668887
+Entities with >= 5 mention: 968964
+Entities with >= 7 mentions: 752359
+Entities with >= 9 mentions: 613656
+Entities with >= 14 mentions: 420260
+/save/ngupta19/datasets/ACE/mentions_inkb.txt
+Known Set Mention >= 2
+Total Mentions : 248 KownMentions : 244
+Total Test Entities : 176 Entities in KnownKB : 172
+Known Set Mention >= 5
+Total Mentions : 248 KownMentions : 244
+Total Test Entities : 176 Entities in KnownKB : 172
+Known Set Mention >= 7
+Total Mentions : 248 KownMentions : 244
+Total Test Entities : 176 Entities in KnownKB : 172
+Known Set Mention >= 9
+Total Mentions : 248 KownMentions : 243
+Total Test Entities : 176 Entities in KnownKB : 171
+Known Set Mention >= 14
+Total Mentions : 248 KownMentions : 240
+Total Test Entities : 176 Entities in KnownKB : 168
+/save/ngupta19/datasets/AIDA/inkb_mentions/mentions_train_inkb.txt
+Known Set Mention >= 2
+Total Mentions : 18033 KownMentions : 17681
+Total Test Entities : 3893 Entities in KnownKB : 3683
+Known Set Mention >= 5
+Total Mentions : 18033 KownMentions : 17302
+Total Test Entities : 3893 Entities in KnownKB : 3472
+Known Set Mention >= 7
+Total Mentions : 18033 KownMentions : 17073
+Total Test Entities : 3893 Entities in KnownKB : 3345
+Known Set Mention >= 9
+Total Mentions : 18033 KownMentions : 16904
+Total Test Entities : 3893 Entities in KnownKB : 3245
+Known Set Mention >= 14
+Total Mentions : 18033 KownMentions : 16571
+Total Test Entities : 3893 Entities in KnownKB : 3065
+/save/ngupta19/datasets/AIDA/inkb_mentions/mentions_dev_inkb.txt
+Known Set Mention >= 2
+Total Mentions : 4674 KownMentions : 4562
+Total Test Entities : 1579 Entities in KnownKB : 1494
+Known Set Mention >= 5
+Total Mentions : 4674 KownMentions : 4405
+Total Test Entities : 1579 Entities in KnownKB : 1378
+Known Set Mention >= 7
+Total Mentions : 4674 KownMentions : 4334
+Total Test Entities : 1579 Entities in KnownKB : 1327
+Known Set Mention >= 9
+Total Mentions : 4674 KownMentions : 4282
+Total Test Entities : 1579 Entities in KnownKB : 1291
+Known Set Mention >= 14
+Total Mentions : 4674 KownMentions : 4181
+Total Test Entities : 1579 Entities in KnownKB : 1221
+/save/ngupta19/datasets/AIDA/inkb_mentions/mentions_test_inkb.txt
+Known Set Mention >= 2
+Total Mentions : 4334 KownMentions : 4214
+Total Test Entities : 1467 Entities in KnownKB : 1388
+Known Set Mention >= 5
+Total Mentions : 4334 KownMentions : 4080
+Total Test Entities : 1467 Entities in KnownKB : 1309
+Known Set Mention >= 7
+Total Mentions : 4334 KownMentions : 4022
+Total Test Entities : 1467 Entities in KnownKB : 1274
+Known Set Mention >= 9
+Total Mentions : 4334 KownMentions : 3951
+Total Test Entities : 1467 Entities in KnownKB : 1232
+Known Set Mention >= 14
+Total Mentions : 4334 KownMentions : 3877
+Total Test Entities : 1467 Entities in KnownKB : 1179
