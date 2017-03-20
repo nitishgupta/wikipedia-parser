@@ -13,6 +13,7 @@ public class TestDataKnownEntitiesOverlap {
 	public Set<String> entitiesGE5;
 	public Set<String> entitiesGE7;
 	public Set<String> entitiesGE9;
+	public Set<String> entitiesGE12;
 	public Set<String> entitiesGE14;
 
 	public MentionStats menstats;
@@ -33,6 +34,7 @@ public class TestDataKnownEntitiesOverlap {
 		entitiesGE5  = new HashSet<>();
 		entitiesGE7  = new HashSet<>();
 		entitiesGE9  = new HashSet<>();
+		entitiesGE12  = new HashSet<>();
 		entitiesGE14  = new HashSet<>();
 
 		for (Map.Entry<String, Integer> entry : menstats.entityMentionCount.entrySet()) {
@@ -51,6 +53,9 @@ public class TestDataKnownEntitiesOverlap {
 			if (count >= 9) {
 				entitiesGE9.add(en);
 			}
+			if (count >= 12) {
+				entitiesGE12.add(en);
+			}
 			if (count >= 14) {
 				entitiesGE14.add(en);
 			}
@@ -60,6 +65,7 @@ public class TestDataKnownEntitiesOverlap {
 		System.out.println("Entities with >= 5 mention: " + entitiesGE5.size());
 		System.out.println("Entities with >= 7 mentions: " + entitiesGE7.size());
 		System.out.println("Entities with >= 9 mentions: " + entitiesGE9.size());
+		System.out.println("Entities with >= 12 mentions: " + entitiesGE12.size());
 		System.out.println("Entities with >= 14 mentions: " + entitiesGE14.size());
 	}
 
@@ -84,7 +90,7 @@ public class TestDataKnownEntitiesOverlap {
 		}
 		bwr.close();
 
-		System.out.println("Total Mentions : " + totalMentions + " KownMentions : " + knownMentions);
+		System.out.println("Total Mentions : " + totalMentions + " KnownMentions : " + knownMentions);
 		System.out.println("Total Test Entities : " + allEntities.size() + " Entities in KnownKB : " + knownEntities.size());
 	}
 
@@ -92,14 +98,16 @@ public class TestDataKnownEntitiesOverlap {
 		for (String testfile : this.testfiles) {
 			System.out.println(testfile);
 
-			System.out.println("Known Set Mention >= 2");
-			testKwnEnOverlap(testfile, entitiesGE2);
-			System.out.println("Known Set Mention >= 5");
-			testKwnEnOverlap(testfile, entitiesGE5);
-			System.out.println("Known Set Mention >= 7");
-			testKwnEnOverlap(testfile, entitiesGE7);
+//			System.out.println("Known Set Mention >= 2");
+//			testKwnEnOverlap(testfile, entitiesGE2);
+//			System.out.println("Known Set Mention >= 5");
+//			testKwnEnOverlap(testfile, entitiesGE5);
+//			System.out.println("Known Set Mention >= 7");
+//			testKwnEnOverlap(testfile, entitiesGE7);
 			System.out.println("Known Set Mention >= 9");
 			testKwnEnOverlap(testfile, entitiesGE9);
+			System.out.println("Known Set Mention >= 12");
+			testKwnEnOverlap(testfile, entitiesGE12);
 			System.out.println("Known Set Mention >= 14");
 			testKwnEnOverlap(testfile, entitiesGE14);
 		}

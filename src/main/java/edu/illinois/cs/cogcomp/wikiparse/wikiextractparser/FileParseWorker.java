@@ -1,12 +1,10 @@
 package edu.illinois.cs.cogcomp.wikiparse.wikiextractparser;
 
-import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
 import edu.illinois.cs.cogcomp.annotation.TextAnnotationBuilder;
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.Sentence;
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.TextAnnotation;
 import edu.illinois.cs.cogcomp.nlp.tokenizer.StatefulTokenizer;
 import edu.illinois.cs.cogcomp.nlp.utility.TokenizerTextAnnotationBuilder;
-import edu.illinois.cs.cogcomp.wikiparse.jwpl.MyPlainTextConverter;
 import edu.illinois.cs.cogcomp.wikiparse.kb.KB;
 import edu.illinois.cs.cogcomp.wikiparse.util.Utilities;
 import edu.illinois.cs.cogcomp.wikiparse.util.io.FileUtils;
@@ -31,49 +29,6 @@ public class FileParseWorker implements Runnable {
 		this.logger = logger;
 		this.infile = infile;
 		this.outfile = outfile;
-	}
-
-	public class Mention {
-		String mid;
-		String wid;
-		String wikiT;
-		String surface;
-		String sentence;
-		String types;
-		String coherence_mentions;
-		int startTokenidx;
-		int endTokenidx;
-
-		public Mention (String mid, String wid, String wikiT, String surface, String sentence, String types,
-										String coherence_mentions, int start, int end) {
-			this.mid = mid;
-			this.wid = wid;
-			this.wikiT = wikiT;
-			this.surface = surface;
-			this.sentence = sentence;
-			this.types = types;
-			this.coherence_mentions = coherence_mentions;
-			this.startTokenidx = start;
-			this.endTokenidx = end;
-		}
-
-		public void updateCoherence(String coherence_mentions) {
-			this.coherence_mentions = coherence_mentions;
-		}
-
-		public String toString() {
-			StringBuilder MentionText = new StringBuilder();
-			MentionText.append(mid).append("\t");
-			MentionText.append(wid).append("\t");
-			MentionText.append(wikiT).append("\t");
-			MentionText.append(Integer.toString(startTokenidx)).append("\t");
-			MentionText.append(Integer.toString(endTokenidx)).append("\t");
-			MentionText.append(surface).append("\t");
-			MentionText.append(sentence).append("\t");
-			MentionText.append(types).append("\t");
-			MentionText.append(coherence_mentions).append("\n");
-			return MentionText.toString();
-		}
 	}
 
 	public Pair<StringBuilder, Map<Pair<Integer, Integer>, String>> _cleanDocText(String markedupText) {

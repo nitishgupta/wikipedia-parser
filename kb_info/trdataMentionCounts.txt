@@ -1,0 +1,9 @@
+Known Entities :: 613656
+Train : 4762263 (6-8 per en)
+Val : 1227312 (2 per en)
+Test : 613656 (1 per en)
+Leftovers : 35995983
+
+Cold Start Entities :: 2569893
+Val : 2615975 (0-2 per entity)
+Leftovers : 2042001
