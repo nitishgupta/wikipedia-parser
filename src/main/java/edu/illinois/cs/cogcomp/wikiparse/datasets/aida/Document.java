@@ -13,10 +13,15 @@ public class Document {
 	public static class Doc {
 		String docid;
 		List<Sentence> sentences;
+		String coherenceString;
 
 		public Doc(String docid) {
 			this.docid = docid;
 			this.sentences = new ArrayList<>();
+		}
+
+		public void setCoherenceString(String coherencestring) {
+			this.coherenceString = coherencestring;
 		}
 	}
 
@@ -30,7 +35,7 @@ public class Document {
 			this.mentions = new ArrayList<>();
 		}
 
-		public void listToString() {
+		public void tokensToString() {
 			StringBuilder t = new StringBuilder();
 			for (String token : tokens) {
 				t.append(token).append(" ");

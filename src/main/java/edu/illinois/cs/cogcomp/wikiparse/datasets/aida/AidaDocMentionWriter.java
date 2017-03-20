@@ -4,9 +4,7 @@ import edu.illinois.cs.cogcomp.wikiparse.kb.KB;
 import edu.illinois.cs.cogcomp.wikiparse.util.Constants;
 import edu.illinois.cs.cogcomp.wikiparse.util.io.FileUtils;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.*;
 
@@ -16,7 +14,7 @@ import java.util.*;
 public class AidaDocMentionWriter {
 
 	public static final String aida_tsv = Constants.aida_yago_tsv;
-	public static final String datasetMentionsFileDir = "/save/ngupta19/datasets/AIDA/";
+	public static final String datasetMentionsFileDir = "/save/ngupta19/datasets/AIDA/wcoh/";
 	public static final String datasetDocsDir = "/save/ngupta19/datasets/AIDA/docs/";
 	public static final String datasetLinksDir = "/save/ngupta19/datasets/AIDA/links/";
 
@@ -71,7 +69,8 @@ public class AidaDocMentionWriter {
 						mentext.append(Integer.toString(mention.endToken)).append("\t");
 						mentext.append(mention.surface).append("\t");
 						mentext.append(sent.text).append("\t");
-						mentext.append(typestxt.toString().trim());
+						mentext.append(typestxt.toString().trim()).append("\t");
+						mentext.append(doc.coherenceString);
 						//mentext.append(doc.docid.replaceAll(" ", "_"));
 						mentext.append("\n");
 						docm++;
@@ -146,7 +145,8 @@ public class AidaDocMentionWriter {
 						mentext.append(Integer.toString(mention.endToken)).append("\t");
 						mentext.append(mention.surface).append("\t");
 						mentext.append(sent.text).append("\t");
-						mentext.append(typestxt.toString().trim());
+						mentext.append(typestxt.toString().trim()).append("\t");
+						mentext.append(doc.coherenceString);
 						//mentext.append(doc.docid.replaceAll(" ", "_"));
 						mentext.append("\n");
 						docm++;
@@ -226,21 +226,33 @@ public class AidaDocMentionWriter {
 		documents = new ArrayList<>();
 		Document.Sentence s = new Document.Sentence();
 		Document.Doc doc = null;
+		Set<String> docMentionsForCoherence = null;
 		List<String> lines = FileUtils.getLines(aida_tsv);
 		for (String line : lines) {
+			// Start of a new document
 			if (line.startsWith("-DOCSTART-")) {
 				if (doc != null) {
-					documents.add(doc);
+					// Adding coherence mentions to doc
+					StringBuilder coherencestring = new StringBuilder();
+					for (String str : docMentionsForCoherence)
+						coherencestring.append(str).append(" ");
+					doc.setCoherenceString(coherencestring.toString().trim());
+
+					documents.add(doc);    // Adding doc to documents list
 					System.out.println(doc.sentences.size());
 				}
 				int start = line.indexOf("(");
 				String docId = line.substring(start + 1, line.length() - 1); // ignore last ")"
+				docMentionsForCoherence = new HashSet<>();
 				doc = new Document.Doc(docId);
 				s = new Document.Sentence();
 				System.out.println("Doc : " + doc.docid);
-			} else {
+			}
+			// Regular line
+			else {
+				// End of a sentence with empty line
 				if (line.trim().length() == 0) {
-					s.listToString();
+					s.tokensToString();
 					doc.sentences.add(s);
 					s = new Document.Sentence();
 					continue;
@@ -263,6 +275,7 @@ public class AidaDocMentionWriter {
 					int startToken = s.tokens.size();
 					if (mentionStart == true) {
 						s.mentions.add(new Document.Mention(mentionsurface, wT, wid, mid, startToken));
+						docMentionsForCoherence.add(mentionsurface.replaceAll(" ", "_"));
 					}
 					s.tokens.add(token);
 				} else if (data.length == 6 || data.length == 7) {
@@ -299,6 +312,7 @@ public class AidaDocMentionWriter {
 //					}
 					if (mentionStart == true) {
 						s.mentions.add(new Document.Mention(mentionsurface, wT, wid, mid, startToken));
+						docMentionsForCoherence.add(mentionsurface.replaceAll(" ", "_"));
 					}
 					s.tokens.add(token);
 				} else {

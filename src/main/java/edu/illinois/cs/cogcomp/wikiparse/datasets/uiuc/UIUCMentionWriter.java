@@ -13,6 +13,7 @@ import edu.illinois.cs.cogcomp.wikiparse.jwpl.WikiDB;
 import edu.illinois.cs.cogcomp.wikiparse.kb.KB;
 import edu.illinois.cs.cogcomp.wikiparse.util.Constants;
 import edu.illinois.cs.cogcomp.wikiparse.util.io.FileUtils;
+import edu.illinois.cs.cogcomp.wikiparse.wikiextractparser.Mention;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -55,7 +56,9 @@ public class UIUCMentionWriter {
 
 	public static class MentionsInDoc {
 		String doc_id;
-		StringBuffer mentions;
+		//StringBuffer mentions;
+		List<Mention> mentions;
+		StringBuffer mentionsstring;
 		Set<String> notFoundInKB;
 		Set<String> notFoundInRedirect;
 		Set<String> notFoundInWiki;
@@ -71,7 +74,9 @@ public class UIUCMentionWriter {
 			this.doc_id = doc_id;
 
 			TextAnnotation ta = tab.createTextAnnotation("", "", text);
-			mentions = new StringBuffer();
+
+			mentions = new ArrayList<>();
+			Set<String> mentionSurfaces = new HashSet<>(); // This is the list for coherence. Surfaces are joined by _
 			for (Pair<Integer, Integer> key : goldSet.keySet()) {
 				total_mentions++;
 				int men_start = key.getFirst();
@@ -95,6 +100,7 @@ public class UIUCMentionWriter {
 				for (int i = surfaceSentStart; i <= surfaceSentEnd; i++)
 					surfaceBuider.append(tokens[i]).append(" ");
 				String surface = surfaceBuider.toString().trim();
+				mentionSurfaces.add(surface.replaceAll(" ", "_"));		// Adding mention surface to set of surfaces in doc for coherence
 
 				// WID and WikiTitle
 				String true_wikit = goldSet.get(key).replace(" ", "_");
@@ -119,17 +125,23 @@ public class UIUCMentionWriter {
 					typestxt.append("<NULL_TYPES>");
 				}
 
-				StringBuffer mention = new StringBuffer();
-				mention.append(mid).append("\t");
-				mention.append(wid).append("\t");
-				mention.append(wt_KB).append("\t");
-				mention.append(Integer.toString(surfaceSentStart)).append("\t");
-				mention.append(Integer.toString(surfaceSentEnd)).append("\t");
-				mention.append(surface).append("\t");
-				mention.append(sentenceSurface).append("\t");
-				mention.append(typestxt.toString().trim());
-				
-				mentions.append(mention).append("\n");
+				Mention m = new Mention(mid, wid, wt_KB, surface, sentenceSurface, typestxt.toString().trim(),
+								"", surfaceSentStart, surfaceSentEnd); // Mention wihout coherence
+				mentions.add(m);
+
+			}
+			StringBuilder coherence_mentions = new StringBuilder();		// Make coherence stringbuilder
+			for (String mentionsurface : mentionSurfaces) {
+				coherence_mentions.append(mentionsurface.trim()).append(" ");
+			}
+			String coherence_string = coherence_mentions.toString().trim();		// Make coherence mentions string
+			for (Mention m : mentions) {		// Add coherence mentions to all mentions of this doc
+				m.updateCoherence(coherence_string);
+			}
+
+			mentionsstring = new StringBuffer();
+			for (Mention m : mentions) {
+				mentionsstring.append(m.toString());
 			}
 
 //			System.out.println(this.doc_id);
@@ -140,47 +152,47 @@ public class UIUCMentionWriter {
 		}
 	}
 
-	public static StringBuffer getMentions(String text, Map<Pair<Integer, Integer>, String> goldSet, String doc_id) {
-		TextAnnotation ta = tab.createTextAnnotation("", "", text);
-		StringBuffer mentions = new StringBuffer();
-		for (Pair<Integer, Integer> key : goldSet.keySet()) {
-			int men_start = key.getFirst();
-			int men_end = key.getSecond();
-			int start_token_id = ta.getTokenIdFromCharacterOffset(men_start);
-			Sentence s1 = ta.getSentenceFromToken(start_token_id);
-
-			String true_wikit = goldSet.get(key);
-			boolean foundinKB = KB.wikiTitle2Wid.containsKey(true_wikit);
-			boolean foundinredirect = false;
-			if (!foundinKB) {
-				foundinredirect = KB.redirect2WikiTitle.containsKey(true_wikit);
-			}
-			String wid = "";
-			if (foundinKB)
-				wid = KB.wikiTitle2Wid.get(true_wikit);
-			else if (foundinredirect)
-				wid = KB.wikiTitle2Wid.get(KB.redirect2WikiTitle.get(true_wikit));
-//			String wid = getWikiId(goldSet.get(key));
-//			if (wid == null) {
-//				System.out.println(goldSet.get(key));
-//				continue;
+//	public static StringBuffer getMentions(String text, Map<Pair<Integer, Integer>, String> goldSet, String doc_id) {
+//		TextAnnotation ta = tab.createTextAnnotation("", "", text);
+//		StringBuffer mentions = new StringBuffer();
+//		for (Pair<Integer, Integer> key : goldSet.keySet()) {
+//			int men_start = key.getFirst();
+//			int men_end = key.getSecond();
+//			int start_token_id = ta.getTokenIdFromCharacterOffset(men_start);
+//			Sentence s1 = ta.getSentenceFromToken(start_token_id);
+//
+//			String true_wikit = goldSet.get(key);
+//			boolean foundinKB = KB.wikiTitle2Wid.containsKey(true_wikit);
+//			boolean foundinredirect = false;
+//			if (!foundinKB) {
+//				foundinredirect = KB.redirect2WikiTitle.containsKey(true_wikit);
 //			}
-
-			String mid = KB.wid2mid.get(wid);
-			String mention_surface = text.substring(men_start, men_end).replaceAll("\\s", " ").trim();
-
-			StringBuffer mention = new StringBuffer();
-			mention.append(mid + "\t");
-			mention.append(wid + "\t");
-			mention.append(mention_surface + "\t");
-			mention.append(s1.getTokenizedText().replaceAll("\\s", " ").trim() + "\t");
-			mention.append(doc_id);
-
-			mentions.append(mention);
-			mentions.append("\n");
-		}
-		return mentions;
-	}
+//			String wid = "";
+//			if (foundinKB)
+//				wid = KB.wikiTitle2Wid.get(true_wikit);
+//			else if (foundinredirect)
+//				wid = KB.wikiTitle2Wid.get(KB.redirect2WikiTitle.get(true_wikit));
+////			String wid = getWikiId(goldSet.get(key));
+////			if (wid == null) {
+////				System.out.println(goldSet.get(key));
+////				continue;
+////			}
+//
+//			String mid = KB.wid2mid.get(wid);
+//			String mention_surface = text.substring(men_start, men_end).replaceAll("\\s", " ").trim();
+//
+//			StringBuffer mention = new StringBuffer();
+//			mention.append(mid + "\t");
+//			mention.append(wid + "\t");
+//			mention.append(mention_surface + "\t");
+//			mention.append(s1.getTokenizedText().replaceAll("\\s", " ").trim() + "\t");
+//			mention.append(doc_id);
+//
+//			mentions.append(mention);
+//			mentions.append("\n");
+//		}
+//		return mentions;
+//	}
 
 	public static void MentionsWriter(String outfile) throws Exception {
 		System.out.println("Writing corpus mentions : " + outfile);
@@ -199,7 +211,7 @@ public class UIUCMentionWriter {
 			String text = FileUtils.getTextFromFile(textDir + doc, "Windows-1252");
 			//StringBuffer mentions = getMentions(text, goldSet, doc);
 			MentionsInDoc mentionsindoc = new MentionsInDoc(text, goldSet, doc);
-			corpus_mentions.append(mentionsindoc.mentions);
+			corpus_mentions.append(mentionsindoc.mentionsstring);
 			num_nonnull_mentions += goldSet.size();
 			num_mentions += mentionsindoc.total_mentions;
 			num_nonunk_mentions += mentionsindoc.non_unk_mentions;
@@ -213,27 +225,27 @@ public class UIUCMentionWriter {
 
 
 
-	private static void runUiuc() {
-		int numNotFound = 0, numNilGoldWpid = 0;
-		int totalNonNullMentions = 0;
-		for (String file : new File(labelDir).list()) {
-			System.out.println(file);
-			String doc = file;
-			Map<Pair<Integer, Integer>, String> goldSet =
-							UIUCEvaluator.readGoldFromWikifier(labelDir + doc, true);
-			String text = FileUtils.getTextFromFile(textDir + doc, "Windows-1252");
-			for (Pair<Integer, Integer> key : goldSet.keySet()) {
-								/*
-                 * After setting up JWPL find what pages are missing from our dataset.
-                 */
-				totalNonNullMentions++;
-				String mention = text.substring(key.getFirst(), key.getSecond());
-				System.out.println(mention + "\t" + goldSet.get(key));
-
-			}
-		}
-		System.out.println("Non Null Mentions : " + totalNonNullMentions);
-	}
+//	private static void runUiuc() {
+//		int numNotFound = 0, numNilGoldWpid = 0;
+//		int totalNonNullMentions = 0;
+//		for (String file : new File(labelDir).list()) {
+//			System.out.println(file);
+//			String doc = file;
+//			Map<Pair<Integer, Integer>, String> goldSet =
+//							UIUCEvaluator.readGoldFromWikifier(labelDir + doc, true);
+//			String text = FileUtils.getTextFromFile(textDir + doc, "Windows-1252");
+//			for (Pair<Integer, Integer> key : goldSet.keySet()) {
+//								/*
+//                 * After setting up JWPL find what pages are missing from our dataset.
+//                 */
+//				totalNonNullMentions++;
+//				String mention = text.substring(key.getFirst(), key.getSecond());
+//				System.out.println(mention + "\t" + goldSet.get(key));
+//
+//			}
+//		}
+//		System.out.println("Non Null Mentions : " + totalNonNullMentions);
+//	}
 
 	public static void main(String[] args) throws Exception {
 
@@ -249,7 +261,7 @@ public class UIUCMentionWriter {
 			case "ace":
 				labelDir = Constants.uiucDataSetRootPath + "ACE2004_Coref_Turking/Dev/ProblemsNoTranscripts/";
 				textDir = Constants.uiucDataSetRootPath + "ACE2004_Coref_Turking/Dev/RawTextsNoTranscripts/";
-				processDatasetPath = Constants.processDatasetRootPath + "ACE/";
+				processDatasetPath = Constants.processDatasetRootPath + "ACE/wcoh/";
 				MentionsWriter(processDatasetPath + "mentions.txt");
 				break;
 			case "wiki_train":
