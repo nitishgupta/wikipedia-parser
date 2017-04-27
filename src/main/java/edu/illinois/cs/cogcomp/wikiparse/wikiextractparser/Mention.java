@@ -4,15 +4,16 @@ package edu.illinois.cs.cogcomp.wikiparse.wikiextractparser;
  * Created by nitishgupta on 3/19/17.
  */
 public class Mention {
-	String mid;
-	String wid;
-	String wikiT;
-	String surface;
-	String sentence;
-	String types;
-	String coherence_mentions;
-	int startTokenidx;
-	int endTokenidx;
+	public String mid;
+	public String wid;
+	public String wikiT;
+	public String surface;
+	public String sentence;
+	public String types;
+	public String coherence_mentions;
+	public int startTokenidx;
+	public int endTokenidx;
+	public String docid;
 
 	public Mention(String mid, String wid, String wikiT, String surface, String sentence, String types,
 								 String coherence_mentions, int start, int end) {
@@ -25,10 +26,15 @@ public class Mention {
 		this.coherence_mentions = coherence_mentions;
 		this.startTokenidx = start;
 		this.endTokenidx = end;
+		this.docid = "";
+	}
+
+	public void addDocId(String docid) {
+		this.docid = docid;
 	}
 
 	public void updateCoherence(String coherence_mentions) {
-		this.coherence_mentions = coherence_mentions;
+		this.coherence_mentions = coherence_mentions.trim();
 	}
 
 	public String toString() {
@@ -41,7 +47,14 @@ public class Mention {
 		MentionText.append(surface).append("\t");
 		MentionText.append(sentence).append("\t");
 		MentionText.append(types).append("\t");
-		MentionText.append(coherence_mentions).append("\n");
+		MentionText.append(coherence_mentions);
+		if (this.docid.equals(""))
+			MentionText.append("\n");
+		else {
+			MentionText.append("\t").append(docid).append("\n");
+		}
 		return MentionText.toString();
 	}
+
+
 }

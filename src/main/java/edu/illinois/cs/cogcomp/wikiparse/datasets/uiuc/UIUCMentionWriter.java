@@ -8,6 +8,7 @@ import edu.illinois.cs.cogcomp.core.datastructures.textannotation.TextAnnotation
 import edu.illinois.cs.cogcomp.nlp.tokenizer.IllinoisTokenizer;
 import edu.illinois.cs.cogcomp.nlp.tokenizer.StatefulTokenizer;
 import edu.illinois.cs.cogcomp.nlp.utility.TokenizerTextAnnotationBuilder;
+import edu.illinois.cs.cogcomp.wikiparse.PredMentions.PredMentions;
 import edu.illinois.cs.cogcomp.wikiparse.datasets.eval.UIUCEvaluator;
 import edu.illinois.cs.cogcomp.wikiparse.jwpl.WikiDB;
 import edu.illinois.cs.cogcomp.wikiparse.kb.KB;
@@ -29,6 +30,8 @@ public class UIUCMentionWriter {
 	private static String outputDocsDir;
 	private static String dataset = "wiki_train";
 	private static String processDatasetPath;
+
+	public static PredMentions predmenAnnotator = new PredMentions();
 
 	public static TextAnnotationBuilder tab = new TokenizerTextAnnotationBuilder(new StatefulTokenizer());
 	// Input wikiTitle is space delimited and coming from a database.
@@ -57,7 +60,7 @@ public class UIUCMentionWriter {
 	public static class MentionsInDoc {
 		String doc_id;
 		//StringBuffer mentions;
-		List<Mention> mentions;
+		public List<Mention> mentions;
 		StringBuffer mentionsstring;
 		Set<String> notFoundInKB;
 		Set<String> notFoundInRedirect;
@@ -65,8 +68,10 @@ public class UIUCMentionWriter {
 		Set<String> foundInWiki_notInKBRed;
 		int total_mentions = 0;
 		int non_unk_mentions = 0;
+		List<Boolean> predMensBool;
 
 		public MentionsInDoc(String text, Map<Pair<Integer, Integer>, String> goldSet, String doc_id) {
+			predMensBool = new ArrayList<>();
 			notFoundInKB = new HashSet<>();
 			notFoundInRedirect  = new HashSet<>();
 			notFoundInWiki = new HashSet<>();
@@ -78,57 +83,62 @@ public class UIUCMentionWriter {
 			mentions = new ArrayList<>();
 			Set<String> mentionSurfaces = new HashSet<>(); // This is the list for coherence. Surfaces are joined by _
 			for (Pair<Integer, Integer> key : goldSet.keySet()) {
-				total_mentions++;
-				int men_start = key.getFirst();
-				int men_end = key.getSecond() - 1;
+				try {
+					total_mentions++;
+					int men_start = key.getFirst();
+					int men_end = key.getSecond() - 1;
 
-				int startTokenInDoc = ta.getTokenIdFromCharacterOffset(men_start);  // Token Location in Doc
-				int endTokenInDoc = ta.getTokenIdFromCharacterOffset(men_end);      // Token Location in Doc
 
-				Sentence sent = ta.getSentenceFromToken(startTokenInDoc);
-				int sentStartToken = sent.getStartSpan();                        // Token location for sent start
-				int surfaceSentStart = startTokenInDoc - sentStartToken;        // Token loc. in sent
-				int surfaceSentEnd = endTokenInDoc - sentStartToken;            // Token loc. in sent
+					int startTokenInDoc = ta.getTokenIdFromCharacterOffset(men_start);  // Token Location in Doc
+					int endTokenInDoc = ta.getTokenIdFromCharacterOffset(men_end);      // Token Location in Doc
 
-				int start_token_id = ta.getTokenIdFromCharacterOffset(men_start);
-				Sentence s1 = ta.getSentenceFromToken(start_token_id);
-				String[] tokens = sent.getTokens();
-				String sentenceSurface = sent.getTokenizedText();
+					Sentence sent = ta.getSentenceFromToken(startTokenInDoc);
+					int sentStartToken = sent.getStartSpan();                        // Token location for sent start
+					int surfaceSentStart = startTokenInDoc - sentStartToken;        // Token loc. in sent
+					int surfaceSentEnd = endTokenInDoc - sentStartToken;            // Token loc. in sent
 
-				// Surface
-				StringBuilder surfaceBuider = new StringBuilder();
-				for (int i = surfaceSentStart; i <= surfaceSentEnd; i++)
-					surfaceBuider.append(tokens[i]).append(" ");
-				String surface = surfaceBuider.toString().trim();
-				mentionSurfaces.add(surface.replaceAll(" ", "_"));		// Adding mention surface to set of surfaces in doc for coherence
+					int start_token_id = ta.getTokenIdFromCharacterOffset(men_start);
+					Sentence s1 = ta.getSentenceFromToken(start_token_id);
+					String[] tokens = sent.getTokens();
+					String sentenceSurface = sent.getTokenizedText();
 
-				// WID and WikiTitle
-				String true_wikit = goldSet.get(key).replace(" ", "_");
-				String wt_KB = KB.KBWikiTitle(true_wikit);
-				String wid = KB.wikiTitle2WID(wt_KB);
+					// Surface
+					StringBuilder surfaceBuider = new StringBuilder();
+					for (int i = surfaceSentStart; i <= surfaceSentEnd; i++)
+						surfaceBuider.append(tokens[i]).append(" ");
+					String surface = surfaceBuider.toString().trim();
+					mentionSurfaces.add(surface.replaceAll(" ", "_"));    // Adding mention surface to set of surfaces in doc for coherence
 
-				// MID
-				String mid;
-				if (KB.wid2mid.containsKey(wid)) {
-					mid = KB.wid2mid.get(wid);
-				} else {
-					mid = "<unk_mid>";
-				}
+					// WID and WikiTitle
+					String true_wikit = goldSet.get(key).replace(" ", "_");
+					String wt_KB = KB.KBWikiTitle(true_wikit);
+					String wid = KB.wikiTitle2WID(wt_KB);
 
-				StringBuilder typestxt = new StringBuilder();
-				if (KB.mid2typelabels.containsKey(mid)) {
-					Set<String> types = KB.mid2typelabels.get(mid);
-					for (String t : types) {
-						typestxt.append(t).append(" ");
+					// MID
+					String mid;
+					if (KB.wid2mid.containsKey(wid)) {
+						mid = KB.wid2mid.get(wid);
+					} else {
+						mid = "<unk_mid>";
 					}
-				} else {
-					typestxt.append("<NULL_TYPES>");
+
+					StringBuilder typestxt = new StringBuilder();
+					if (KB.mid2typelabels.containsKey(mid)) {
+						Set<String> types = KB.mid2typelabels.get(mid);
+						for (String t : types) {
+							typestxt.append(t).append(" ");
+						}
+					} else {
+						typestxt.append("<NULL_TYPES>");
+					}
+
+					Mention m = new Mention(mid, wid, wt_KB, surface, sentenceSurface, typestxt.toString().trim(),
+									"", surfaceSentStart, surfaceSentEnd); // Mention wihout coherence
+					m.addDocId(doc_id);
+					mentions.add(m);
+				} catch (Exception e) {
+
 				}
-
-				Mention m = new Mention(mid, wid, wt_KB, surface, sentenceSurface, typestxt.toString().trim(),
-								"", surfaceSentStart, surfaceSentEnd); // Mention wihout coherence
-				mentions.add(m);
-
 			}
 			StringBuilder coherence_mentions = new StringBuilder();		// Make coherence stringbuilder
 			for (String mentionsurface : mentionSurfaces) {
@@ -144,55 +154,13 @@ public class UIUCMentionWriter {
 				mentionsstring.append(m.toString());
 			}
 
-//			System.out.println(this.doc_id);
-//			System.out.println("NOT IN KB : " + notFoundInKB.toString());
-//			System.out.println("NOT IN REDIRECT : " + notFoundInRedirect.toString());
-//			System.out.println("FOUND IN WIKI but NOT IN KB : " + foundInWiki_notInKBRed.toString());
-//			System.out.println("NOT FOUND IN WIKI : " + notFoundInWiki.toString());
+			for (Mention m : mentions) {
+				Boolean r = predmenAnnotator.annotateNER(m.sentence, m.startTokenidx, m.endTokenidx);
+				predMensBool.add(r);
+			}
 		}
 	}
 
-//	public static StringBuffer getMentions(String text, Map<Pair<Integer, Integer>, String> goldSet, String doc_id) {
-//		TextAnnotation ta = tab.createTextAnnotation("", "", text);
-//		StringBuffer mentions = new StringBuffer();
-//		for (Pair<Integer, Integer> key : goldSet.keySet()) {
-//			int men_start = key.getFirst();
-//			int men_end = key.getSecond();
-//			int start_token_id = ta.getTokenIdFromCharacterOffset(men_start);
-//			Sentence s1 = ta.getSentenceFromToken(start_token_id);
-//
-//			String true_wikit = goldSet.get(key);
-//			boolean foundinKB = KB.wikiTitle2Wid.containsKey(true_wikit);
-//			boolean foundinredirect = false;
-//			if (!foundinKB) {
-//				foundinredirect = KB.redirect2WikiTitle.containsKey(true_wikit);
-//			}
-//			String wid = "";
-//			if (foundinKB)
-//				wid = KB.wikiTitle2Wid.get(true_wikit);
-//			else if (foundinredirect)
-//				wid = KB.wikiTitle2Wid.get(KB.redirect2WikiTitle.get(true_wikit));
-////			String wid = getWikiId(goldSet.get(key));
-////			if (wid == null) {
-////				System.out.println(goldSet.get(key));
-////				continue;
-////			}
-//
-//			String mid = KB.wid2mid.get(wid);
-//			String mention_surface = text.substring(men_start, men_end).replaceAll("\\s", " ").trim();
-//
-//			StringBuffer mention = new StringBuffer();
-//			mention.append(mid + "\t");
-//			mention.append(wid + "\t");
-//			mention.append(mention_surface + "\t");
-//			mention.append(s1.getTokenizedText().replaceAll("\\s", " ").trim() + "\t");
-//			mention.append(doc_id);
-//
-//			mentions.append(mention);
-//			mentions.append("\n");
-//		}
-//		return mentions;
-//	}
 
 	public static void MentionsWriter(String outfile) throws Exception {
 		System.out.println("Writing corpus mentions : " + outfile);
@@ -200,6 +168,8 @@ public class UIUCMentionWriter {
 		int num_nonnull_mentions = 0;
 		int num_mentions = 0;
 		int num_nonunk_mentions = 0;
+		String outf = "/save/ngupta19/datasets/ACE/BOT.gold.all";
+		StringBuffer botgold = new StringBuffer();
 		for (String file : new File(labelDir).list()) {
 			String doc = file;
 			System.out.println(doc);
@@ -215,7 +185,24 @@ public class UIUCMentionWriter {
 			num_nonnull_mentions += goldSet.size();
 			num_mentions += mentionsindoc.total_mentions;
 			num_nonunk_mentions += mentionsindoc.non_unk_mentions;
+
+			StringBuffer docbot = new StringBuffer();
+			docbot.append(doc).append("\t");
+			Set<String> bots = new HashSet<>();
+			for (int i = 0; i < mentionsindoc.mentions.size(); i++) {
+					String wid = mentionsindoc.mentions.get(i).wid;
+					if (!wid.equals("<unk_wid>"))
+						bots.add(wid);
+			}
+			if (bots.size() > 0) {
+				for (String wid : bots) {
+					docbot.append(wid).append(" ");
+				}
+				botgold.append(docbot.toString().trim()).append("\n");
+			}
 		}
+
+		FileUtils.writeStringToFile(outf, botgold.toString());
 		FileUtils.writeStringToFile(outfile, corpus_mentions.toString().trim());
 		System.out.println("Num of non-null mentions : " + num_nonnull_mentions);
 		System.out.println("Total Mentions according to function : " + num_mentions);
@@ -224,30 +211,8 @@ public class UIUCMentionWriter {
 
 
 
-
-//	private static void runUiuc() {
-//		int numNotFound = 0, numNilGoldWpid = 0;
-//		int totalNonNullMentions = 0;
-//		for (String file : new File(labelDir).list()) {
-//			System.out.println(file);
-//			String doc = file;
-//			Map<Pair<Integer, Integer>, String> goldSet =
-//							UIUCEvaluator.readGoldFromWikifier(labelDir + doc, true);
-//			String text = FileUtils.getTextFromFile(textDir + doc, "Windows-1252");
-//			for (Pair<Integer, Integer> key : goldSet.keySet()) {
-//								/*
-//                 * After setting up JWPL find what pages are missing from our dataset.
-//                 */
-//				totalNonNullMentions++;
-//				String mention = text.substring(key.getFirst(), key.getSecond());
-//				System.out.println(mention + "\t" + goldSet.get(key));
-//
-//			}
-//		}
-//		System.out.println("Non Null Mentions : " + totalNonNullMentions);
-//	}
-
 	public static void main(String[] args) throws Exception {
+
 
 		dataset = "ace";
 
@@ -262,7 +227,7 @@ public class UIUCMentionWriter {
 				labelDir = Constants.uiucDataSetRootPath + "ACE2004_Coref_Turking/Dev/ProblemsNoTranscripts/";
 				textDir = Constants.uiucDataSetRootPath + "ACE2004_Coref_Turking/Dev/RawTextsNoTranscripts/";
 				processDatasetPath = Constants.processDatasetRootPath + "ACE/wcoh/";
-				MentionsWriter(processDatasetPath + "mentions.txt");
+				MentionsWriter(processDatasetPath + "mentions_xxx.txt");
 				break;
 			case "wiki_train":
 				labelDir = Constants.uiucDataSetRootPath + "WikipediaSample/ProblemsTrain/";;
